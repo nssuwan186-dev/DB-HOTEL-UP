@@ -34,7 +34,8 @@ import {
   MapPin,
   PieChart as PieChartIcon,
   BarChart3,
-  Calendar
+  Calendar,
+  ChevronDown
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -532,6 +533,8 @@ const BookingFormModal = ({ isOpen, onClose, onSave, customers, rooms }: any) =>
     channel: 'Walk-in'
   });
 
+  const [isRoomSelectOpen, setIsRoomSelectOpen] = useState(false);
+
   // Calculations
   const selectedRoom = rooms.find((r: Room) => r.room_id === formData.room_id);
   const nights = useMemo(() => {
@@ -587,20 +590,65 @@ const BookingFormModal = ({ isOpen, onClose, onSave, customers, rooms }: any) =>
            </div>
 
            {/* Room Select */}
-           <div>
+           <div className="relative">
               <label className="block text-sm font-medium text-slate-700 mb-1">ห้องพัก</label>
-              <select 
-                value={formData.room_id}
-                onChange={(e) => handleChange('room_id', e.target.value)}
-                className="w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+              
+              <button 
+                type="button"
+                onClick={() => setIsRoomSelectOpen(!isRoomSelectOpen)}
+                className="w-full p-2.5 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none text-left flex justify-between items-center border-slate-300 shadow-sm hover:bg-slate-50 transition-colors"
               >
-                <option value="">-- เลือกห้องพัก --</option>
-                {rooms.map((r: Room) => (
-                  <option key={r.room_id} value={r.room_id} disabled={r.status !== RoomStatus.Available}>
-                    {r.room_number} - {r.room_type} (฿{r.price_per_night}) {r.status !== RoomStatus.Available ? `[${tRoomStatus(r.status)}]` : ''}
-                  </option>
-                ))}
-              </select>
+                {selectedRoom ? (
+                  <div className="flex items-center">
+                     <div className={`w-3 h-3 rounded-full mr-2 ${selectedRoom.status === RoomStatus.Available ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                     <span className="font-medium text-slate-700">{selectedRoom.room_number}</span>
+                     <span className="mx-2 text-slate-300">|</span>
+                     <span className="text-sm text-slate-600">{selectedRoom.room_type}</span>
+                  </div>
+                ) : (
+                  <span className="text-slate-500">-- เลือกห้องพัก --</span>
+                )}
+                <ChevronDown size={18} className={`text-slate-400 transition-transform duration-200 ${isRoomSelectOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {isRoomSelectOpen && (
+                <div className="absolute z-20 mt-1 w-full bg-white shadow-xl max-h-60 rounded-xl py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm border border-slate-100 animate-in fade-in zoom-in-95 duration-100">
+                   {rooms.map((r: Room) => {
+                     const isAvailable = r.status === RoomStatus.Available;
+                     const isSelected = r.room_id === formData.room_id;
+                     return (
+                       <div 
+                         key={r.room_id}
+                         onClick={() => {
+                           if(isAvailable) {
+                             handleChange('room_id', r.room_id);
+                             setIsRoomSelectOpen(false);
+                           }
+                         }}
+                         className={`
+                           cursor-pointer select-none relative py-3 pl-4 pr-4 flex items-center justify-between border-b border-slate-50 last:border-0 transition-colors
+                           ${isAvailable ? 'hover:bg-blue-50 text-slate-900' : 'bg-slate-50 text-slate-400 cursor-not-allowed opacity-75'}
+                           ${isSelected ? 'bg-blue-50' : ''}
+                         `}
+                       >
+                         <div className="flex items-center">
+                            <div className={`flex-shrink-0 w-2.5 h-2.5 rounded-full mr-3 ${isAvailable ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                            <div className="flex flex-col">
+                                <span className={`font-medium ${isAvailable ? 'text-slate-800' : 'text-slate-500'}`}>
+                                  {r.room_number}
+                                </span>
+                                <span className="text-xs text-slate-500">{r.room_type}</span>
+                            </div>
+                         </div>
+                         <div className="flex flex-col items-end">
+                            <span className="font-medium text-sm">฿{r.price_per_night.toLocaleString()}</span>
+                            {!isAvailable && <span className="text-[10px] uppercase bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded mt-1 font-medium">{tRoomStatus(r.status)}</span>}
+                         </div>
+                       </div>
+                     );
+                   })}
+                </div>
+              )}
            </div>
 
            {/* Dates */}
