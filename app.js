@@ -843,6 +843,62 @@ const importCSVBtn = document.getElementById('importCSVBtn');
 const exportCSVBtn = document.getElementById('exportCSVBtn');
 const csvFileInput = document.getElementById('csvFileInput');
 
+// ===== Smart Data Analyzer & Import Engine =====
+const smartImport = {
+    // Keywords for pattern matching
+    patterns: {
+        expense: ['เบิก', 'จ่าย', 'ซื้อ', 'หัก', 'ค่า', 'จ้าง', 'ซ่อม'],
+        income: ['พักต่อ', 'ห้อง', 'โอน', 'รับ'],
+        deposit: ['มัดจำ', 'เงินประกัน']
+    },
+
+    analyzeLine(data, existingTransactions) {
+        const name = data.name || '';
+        const note = data.note || '';
+        let expense = data.expense || 0;
+        let income = data.income || 0;
+        let deposit = data.deposit || 0;
+
+        // 1. Cross-check for Duplicates
+        const isDuplicate = existingTransactions.some(t =>
+            t.date === data.date &&
+            t.name === data.name &&
+            (t.income === income && t.expense === expense)
+        );
+        if (isDuplicate) return { status: 'duplicate', data: null };
+
+        // 2. Smart Categorization (If values are ambiguous)
+        const combinedText = (name + note).toLowerCase();
+
+        // If it's clearly an expense by keyword but put in income column
+        if (this.patterns.expense.some(p => combinedText.includes(p)) && income > 0 && expense === 0) {
+            expense = income;
+            income = 0;
+            data.aiNote = 'AI: ย้ายจากรายรับไปรายจ่ายตามคำสำคัญ';
+        }
+
+        // 3. Room & Deposit Logic
+        if (combinedText.includes('มัดจำ') && deposit === 0 && income > 0) {
+            deposit = income;
+            data.aiNote = 'AI: ตรวจพบมัดจำสด';
+        }
+
+        return {
+            status: 'ok',
+            data: { ...data, expense, income, deposit }
+        };
+    },
+
+    getSummary(transactions) {
+        return {
+            count: transactions.length,
+            totalIncome: transactions.reduce((s, t) => s + (t.income || 0), 0),
+            totalExpense: transactions.reduce((s, t) => s + (t.expense || 0), 0),
+            totalDeposit: transactions.reduce((s, t) => s + (t.deposit || 0), 0)
+        };
+    }
+};
+
 if (importCSVBtn && csvFileInput) {
     importCSVBtn.addEventListener('click', () => {
         csvFileInput.click();
@@ -857,8 +913,7 @@ if (importCSVBtn && csvFileInput) {
             try {
                 const csv = event.target.result;
                 const lines = csv.split(/\r?\n/);
-                const newTransactions = [];
-                console.log('CSV Import started. Total lines:', lines.length);
+                const results = { ok: [], duplicates: 0, fixed: 0 };
 
                 const parseCSVLine = (text) => {
                     const result = [];
@@ -878,7 +933,6 @@ if (importCSVBtn && csvFileInput) {
 
                 const cleanNumber = (val) => {
                     if (!val) return 0;
-                    // Remove anything that isn't a digit or a dot (like commas, spaces, currency symbols)
                     const cleaned = val.toString().replace(/[^0-9.]/g, '');
                     return parseFloat(cleaned) || 0;
                 };
@@ -888,78 +942,82 @@ if (importCSVBtn && csvFileInput) {
                     if (!line) continue;
 
                     const values = parseCSVLine(line);
-                    if (values.length >= 2) { // At least date and name
-                        try {
-                            let rawDate = values[0] || '';
-                            let formattedDate = rawDate;
+                    if (values.length >= 2) {
+                        let rawDate = values[0] || '';
+                        let formattedDate = rawDate;
+                        const dateMatch = rawDate.match(/(\d{1,4})[\/\-](\d{1,2})[\/\-](\d{1,4})/);
+                        if (dateMatch) {
+                            const [_, d1, d2, d3] = dateMatch;
+                            formattedDate = d1.length === 4 ? `${d1}-${d2.padStart(2, '0')}-${d3.padStart(2, '0')}` : `${d3}-${d2.padStart(2, '0')}-${d1.padStart(2, '0')}`;
+                        }
 
-                            // Re-attempt date parsing
-                            const dateMatch = rawDate.match(/(\d{1,4})[\/\-](\d{1,2})[\/\-](\d{1,4})/);
-                            if (dateMatch) {
-                                const d1 = dateMatch[1];
-                                const d2 = dateMatch[2];
-                                const d3 = dateMatch[3];
-                                if (d1.length === 4) { // YYYY-MM-DD
-                                    formattedDate = `${d1}-${d2.padStart(2, '0')}-${d3.padStart(2, '0')}`;
-                                } else { // DD-MM-YYYY
-                                    formattedDate = `${d3}-${d2.padStart(2, '0')}-${d1.padStart(2, '0')}`;
-                                }
-                            }
+                        const rawData = {
+                            date: formattedDate,
+                            name: values[1] || 'ไม่มีชื่อ',
+                            phone: values[2] || '-',
+                            room: values[3] || '-',
+                            nights: parseInt(values[4]) || 0,
+                            expense: cleanNumber(values[5]),
+                            income: cleanNumber(values[6]),
+                            deposit: cleanNumber(values[8]),
+                            note: values[9] || '',
+                            paymentMethod: values[10] || 'cash'
+                        };
 
-                            newTransactions.push({
-                                id: Date.now() + i,
-                                date: formattedDate,
-                                name: values[1] || 'รายการไม่มีชื่อ',
-                                phone: values[2] || '-',
-                                room: values[3] || '-',
-                                nights: parseInt(values[4]) || 0,
-                                expense: cleanNumber(values[5]),
-                                income: cleanNumber(values[6]),
-                                balance: 0,
-                                deposit: cleanNumber(values[8]),
-                                note: values[9] || '',
-                                paymentMethod: values[10] || 'cash'
-                            });
-                        } catch (lineError) {
-                            console.warn(`Error skipping line ${i + 1}:`, lineError);
+                        const analysis = smartImport.analyzeLine(rawData, transactions);
+                        if (analysis.status === 'ok') {
+                            if (analysis.data.aiNote) results.fixed++;
+                            results.ok.push({ ...analysis.data, id: Date.now() + i });
+                        } else if (analysis.status === 'duplicate') {
+                            results.duplicates++;
                         }
                     }
                 }
 
-                if (newTransactions.length > 0) {
-                    transactions.push(...newTransactions);
+                if (results.ok.length > 0) {
+                    const summary = smartImport.getSummary(results.ok);
+                    const confirmMsg = `🤖 ผลการวิเคราะห์ข้อมูลโดย AI:
+-----------------------------------
+✅ พร้อมนำเข้า: ${results.ok.length} รายการ
+⚠️ ข้ามรายการซ้ำ: ${results.duplicates} รายการ
+🛠️ ปรับแก้ข้อมูลอัตโนมัติ: ${results.fixed} รายการ
 
-                    // Recalculate balances
-                    let runningBalance = 0;
-                    // Sort by date then by transaction order
-                    transactions.sort((a, b) => {
-                        const dateA = new Date(a.date).getTime() || 0;
-                        const dateB = new Date(b.date).getTime() || 0;
-                        if (dateA !== dateB) return dateA - dateB;
-                        return a.id - b.id;
-                    });
+💰 สรุปยอดที่กำลังจะเพิ่ม:
++ รายรับรวม: ${formatCurrency(summary.totalIncome)}
+- รายจ่ายรวม: ${formatCurrency(summary.totalExpense)}
+🔒 มัดจำรวม: ${formatCurrency(summary.totalDeposit)}
 
-                    transactions.forEach(t => {
-                        if (t.name === 'ยกมา') {
-                            runningBalance = t.balance;
-                        } else {
-                            runningBalance = runningBalance - (t.expense || 0) + (t.income || 0);
-                            t.balance = runningBalance;
-                        }
-                    });
+คุณต้องการบันทึกข้อมูลเหล่านี้ลงระบบหรือไม่?`;
 
-                    renderAccounting();
-                    alert(`นำเข้า ${newTransactions.length} รายการสำเร็จ! (กรุณาตรวจสอบยอดเงินคงเหลือ)`);
+                    if (confirm(confirmMsg)) {
+                        transactions.push(...results.ok);
+
+                        // Recalculate everything
+                        let runningBalance = 0;
+                        transactions.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime() || a.id - b.id);
+
+                        transactions.forEach(t => {
+                            if (t.name === 'ยกมา') {
+                                runningBalance = t.balance;
+                            } else {
+                                runningBalance = runningBalance - (t.expense || 0) + (t.income || 0);
+                                t.balance = runningBalance;
+                            }
+                        });
+
+                        renderAccounting();
+                        alert('ดำเนินการเสร็จสิ้น! ข้อมูลถูกบันทึกและคำนวนยอดคงเหลือใหม่แล้ว');
+                    }
                 } else {
-                    alert('ไม่พบข้อมูลที่ใช้งานได้ในไฟล์นี้');
+                    alert('🤖 AI ไม่พบข้อมูลใหม่ที่สามารถนำเข้าได้ (ข้อมูลอาจจะซ้ำทั้งหมด)');
                 }
             } catch (error) {
-                console.error('Final CSV Import Error:', error);
-                alert('เกิดข้อผิดพลาดในการประมวลผลไฟล์: ' + error.message);
+                console.error('Smart Import Error:', error);
+                alert('เกิดข้อผิดพลาด: ' + error.message);
             }
         };
         reader.readAsText(file, 'UTF-8');
-        e.target.value = ''; // Reset for next upload
+        e.target.value = '';
     });
 }
 
