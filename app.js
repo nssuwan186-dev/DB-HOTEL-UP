@@ -63,13 +63,31 @@ function formatCurrency(amount) {
 
 function formatDate(dateString) {
     if (!dateString) return '-';
-    const date = new Date(dateString);
+    let date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+        // Try parsing DD/MM/YYYY
+        const parts = dateString.split(/[\/\-]/);
+        if (parts.length === 3) {
+            // Assume DD/MM/YYYY or YYYY/MM/DD
+            if (parts[0].length === 4) date = new Date(parts[0], parts[1] - 1, parts[2]);
+            else date = new Date(parts[2], parts[1] - 1, parts[0]);
+        }
+    }
+    if (isNaN(date.getTime())) return dateString; // Return original if still invalid
     return new Intl.DateTimeFormat('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
 }
 
 function formatDateLong(dateString) {
     if (!dateString) return '-';
-    const date = new Date(dateString);
+    let date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+        const parts = dateString.split(/[\/\-]/);
+        if (parts.length === 3) {
+            if (parts[0].length === 4) date = new Date(parts[0], parts[1] - 1, parts[2]);
+            else date = new Date(parts[2], parts[1] - 1, parts[0]);
+        }
+    }
+    if (isNaN(date.getTime())) return dateString;
     return new Intl.DateTimeFormat('th-TH', { year: 'numeric', month: 'long', day: 'numeric' }).format(date);
 }
 
@@ -837,41 +855,88 @@ if (importCSVBtn && csvFileInput) {
             reader.onload = (event) => {
                 try {
                     const csv = event.target.result;
-                    const lines = csv.split('\n');
+                    const lines = csv.split(/\r?\n/);
                     const newTransactions = [];
+
+                    // Simple CSV parser that handles quotes
+                    const parseCSVLine = (text) => {
+                        const result = [];
+                        let cell = '';
+                        let inQuotes = false;
+                        for (let i = 0; i < text.length; i++) {
+                            const char = text[i];
+                            if (char === '"') inQuotes = !inQuotes;
+                            else if (char === ',' && !inQuotes) {
+                                result.push(cell.trim());
+                                cell = '';
+                            } else cell += char;
+                        }
+                        result.push(cell.trim());
+                        return result;
+                    };
 
                     for (let i = 1; i < lines.length; i++) {
                         const line = lines[i].trim();
                         if (!line) continue;
 
-                        const values = line.split(',');
-                        if (values.length >= 10) {
+                        const values = parseCSVLine(line);
+                        if (values.length >= 8) {
+                            // Standardize date to YYYY-MM-DD for storage if possible
+                            let rawDate = values[0];
+                            let formattedDate = rawDate;
+                            const dateParts = rawDate.split(/[\/\-]/);
+                            if (dateParts.length === 3) {
+                                if (dateParts[0].length === 4) formattedDate = `${dateParts[0]}-${dateParts[1].padStart(2, '0')}-${dateParts[2].padStart(2, '0')}`;
+                                else formattedDate = `${dateParts[2]}-${dateParts[1].padStart(2, '0')}-${dateParts[0].padStart(2, '0')}`;
+                            }
+
                             newTransactions.push({
-                                id: transactions.length + i,
-                                date: values[0],
-                                name: values[1],
+                                id: Date.now() + i, // Use unique ID
+                                date: formattedDate,
+                                name: values[1] || 'ไม่มีชื่อ',
                                 phone: values[2] || '-',
                                 room: values[3] || '-',
                                 nights: parseInt(values[4]) || 0,
-                                expense: parseFloat(values[5]) || 0,
-                                income: parseFloat(values[6]) || 0,
-                                balance: parseFloat(values[7]) || 0,
-                                deposit: parseFloat(values[8]) || 0,
+                                expense: parseFloat(values[5].replace(/[^0-9.]/g, '')) || 0,
+                                income: parseFloat(values[6].replace(/[^0-9.]/g, '')) || 0,
+                                balance: 0, // Will be recalculated
+                                deposit: parseFloat(values[8]?.replace(/[^0-9.]/g, '')) || 0,
                                 note: values[9] || '',
                                 paymentMethod: values[10] || 'cash'
                             });
                         }
                     }
 
-                    transactions.push(...newTransactions);
-                    renderAccounting();
-                    alert(`นำเข้า ${newTransactions.length} รายการสำเร็จ!`);
+                    if (newTransactions.length > 0) {
+                        transactions.push(...newTransactions);
+
+                        // Recalculate all balances to ensure consistency
+                        let runningBalance = 0;
+                        transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                        transactions.forEach(t => {
+                            if (t.name === 'ยกมา') {
+                                runningBalance = t.balance;
+                            } else {
+                                runningBalance = runningBalance - (t.expense || 0) + (t.income || 0);
+                                t.balance = runningBalance;
+                            }
+                        });
+
+                        renderAccounting();
+                        alert(`นำเข้า ${newTransactions.length} รายการสำเร็จ และปรับปรุงยอดคงเหลือแล้ว!`);
+                    } else {
+                        alert('ไม่พบข้อมูลที่ถูกต้องในไฟล์');
+                    }
                 } catch (error) {
+                    console.error('CSV Import Error:', error);
                     alert('เกิดข้อผิดพลาดในการนำเข้าข้อมูล: ' + error.message);
                 }
             };
             reader.readAsText(file, 'UTF-8');
         }
+        // Clear value so the same file can be uploaded again
+        e.target.value = '';
     });
 }
 
