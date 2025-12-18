@@ -15,30 +15,31 @@ const STORAGE_KEYS = {
 };
 
 // ===== Cloud Sync Shim (Bridge for GitHub Pages) =====
+const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbxghP8j2z01jRTcjWA5nK8RDrWSfq7Zl5THqTuIqvd2vZ7ZLAYhVmNaPgBF60n6q-Q/exec';
+
 const CloudSync = {
-    get url() { return localStorage.getItem(STORAGE_KEYS.GAS_URL) || ''; },
+    get url() { return localStorage.getItem(STORAGE_KEYS.GAS_URL) || DEFAULT_GAS_URL; },
     setURL(val) { localStorage.setItem(STORAGE_KEYS.GAS_URL, val); },
 
     async request(action, data = {}) {
         if (!this.url) return { error: 'No URL connected' };
         try {
+            // Using GET/JSONP-like or POST if headers are correct. 
+            // Apps Script requires a redirect-aware fetch.
             const response = await fetch(this.url, {
                 method: 'POST',
-                mode: 'no-cors', // Apps Script requires no-cors sometimes, or use redirect handling
+                mode: 'cors', // Requires gas to handle OPTIONS or use a different approach
                 body: JSON.stringify({ action, data })
             });
-            // Note: because of no-cors, we can't read response body directly. 
-            // In a real production environment, you'd use a proxy or JSONP.
-            // For this demo, we assume success if no error is thrown.
-            return { status: 'success' };
+            return await response.json();
         } catch (e) {
-            console.error('CloudSync Error:', e);
-            return { error: 'Connection failed' };
+            console.warn('Direct Fetch failed (likely CORS), attempting simulation fallback...');
+            return null;
         }
     }
 };
 
-// Simulation of google.script.run for the user's new template logic
+// Unified Bridge: Directly calls the user's Google Script functions
 window.google = {
     script: {
         run: {
@@ -46,24 +47,25 @@ window.google = {
                 this.handler = handler;
                 return this;
             },
-            getDashboardData: function () {
-                // Simulate or Call API
-                setTimeout(() => {
+            getDashboardData: async function () {
+                const res = await CloudSync.request('getDashboard');
+                if (res) this.handler(res);
+                else {
+                    // Fallback visual data if cloud is offline
                     this.handler({
-                        stats: { income: "45,000", expense: "12,400", available: 32, occupied: 18 },
-                        chart: { categories: ['11/12', '12/12', '13/12', '14/12', '15/12', '16/12', '17/12'], seriesIncome: [1200, 3000, 4500, 2800, 5000, 4200, 5500], seriesExpense: [500, 1200, 800, 1500, 900, 2000, 1100] },
-                        roomStatus: { occupied: 18, available: 32 }
+                        stats: { income: "0", expense: "0", available: 51, occupied: 0 },
+                        chart: { categories: [], seriesIncome: [], seriesExpense: [] },
+                        roomStatus: { occupied: 0, available: 51 }
                     });
-                }, 500);
+                }
             },
-            getRoomData: function () {
-                setTimeout(() => this.handler(rooms.map(r => [r.number, r.building, r.floor, r.type, r.price])), 500);
+            getRoomData: async function () {
+                const res = await CloudSync.request('getRooms');
+                if (res) this.handler(res);
             },
-            getCustomerList: function () {
-                setTimeout(() => this.handler(customers), 200);
-            },
-            getRoomStatusByDate: function (date) {
-                setTimeout(() => this.handler(rooms.map(r => ({ room: r.number, type: r.type, price: r.price, status: r.status, customer: '' }))), 300);
+            getCustomerList: async function () {
+                const res = await CloudSync.request('getCustomers');
+                if (res) this.handler(res);
             }
         }
     }
