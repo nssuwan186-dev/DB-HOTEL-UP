@@ -31,25 +31,20 @@ const MASTER_ROOMS = [
 ];
 
 const MASTER_GUESTS = [
-    {
-        guest_id: 'G01155',
-        first_name: 'ชัชพล',
-        last_name: 'หลวงชา',
-        phone: '091-8673787',
-        email: '-',
-        guest_type: 'Individual',
-        tax_id: '-',
-        province: 'บึงกาฬ'
-    },
-    {
-        guest_id: 'G01188',
-        first_name: 'บริษัท ชัวร์ ฟิลเตอร์ (ประเทศไทย) จำกัด',
-        last_name: '',
-        phone: '086-4666146',
-        guest_type: 'Corporate',
-        tax_id: '745546000078',
-        province: 'สมุทรสาคร'
-    }
+    { guest_id: 'CM01734', first_name: 'ครูเกศกนก', last_name: 'หนูนาค', phone: '083-140-4771', guest_type: 'Individual', province: '-' },
+    { guest_id: 'CM01735', first_name: 'รอง ผ.อ. แหม่ม', last_name: '', phone: '081-066-2923', guest_type: 'Individual', province: '-' },
+    { guest_id: 'CM01737', first_name: 'คุณ ฐานิตา', last_name: '', phone: '087-801-8921', guest_type: 'Individual', province: '-' },
+    { guest_id: 'CM01738', first_name: 'Dk', last_name: '', phone: '086-466-6146', guest_type: 'Corporate', province: '-' },
+    { guest_id: 'CM01148', first_name: 'ทวีศักดิ์', last_name: '', phone: '082-8389-843', guest_type: 'Individual', province: '-' },
+    { guest_id: 'CM01773', first_name: 'ห้าม้าโอสถ', last_name: '', phone: '086-826-6853', guest_type: 'Corporate', province: '-' }
+];
+
+const MASTER_BOOKINGS = [
+    // ตัวอย่างรายการจองจากรายงาน (เพื่อใช้คำนวณสถิติ Analytics)
+    { booking_id: 'VP01734', guest_id: 'CM01734', room_id: 1, check_in_date: '2025-11-16', check_out_date: '2025-11-18', nights: 2, total_amount: 800, booking_source: 'Line' },
+    { booking_id: 'VP01740', guest_id: 'CM01735', room_id: 6, check_in_date: '2025-11-16', check_out_date: '2025-11-18', nights: 2, total_amount: 1000, booking_source: 'Line' },
+    { booking_id: 'VP01758', guest_id: 'CM01737', room_id: 1, check_in_date: '2025-11-15', check_out_date: '2025-11-16', nights: 1, total_amount: 400, booking_source: 'โทรศัพท์' },
+    { booking_id: 'VP01763', guest_id: 'CM01148', room_id: 11, check_in_date: '2025-11-12', check_out_date: '2025-11-13', nights: 1, total_amount: 400, booking_source: 'Walk-in' }
 ];
 
 // ===== 3.0 DATABASE MANAGER (RELATIONAL SYNC) =====
@@ -60,7 +55,7 @@ const DB = {
         console.log('--- Initializing VIPAT Relational Engine (3NF) ---');
         this.state.guests = this.load(STORAGE_KEYS.GUESTS) || MASTER_GUESTS;
         this.state.rooms = this.load(STORAGE_KEYS.ROOMS) || MASTER_ROOMS;
-        this.state.bookings = this.load(STORAGE_KEYS.BOOKINGS) || [];
+        this.state.bookings = this.load(STORAGE_KEYS.BOOKINGS) || MASTER_BOOKINGS;
         this.state.payments = this.load(STORAGE_KEYS.PAYMENTS) || [];
         this.state.expenses = this.load(STORAGE_KEYS.EXPENSES) || [];
         this.state.tenants = this.load(STORAGE_KEYS.TENANTS) || [];
