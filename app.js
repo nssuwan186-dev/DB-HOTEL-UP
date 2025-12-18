@@ -65,15 +65,21 @@ function formatDate(dateString) {
     if (!dateString) return '-';
     let date = new Date(dateString);
     if (isNaN(date.getTime())) {
-        // Try parsing DD/MM/YYYY
+        // Support for D-M-68 (Thai BE)
         const parts = dateString.split(/[\/\-]/);
         if (parts.length === 3) {
-            // Assume DD/MM/YYYY or YYYY/MM/DD
-            if (parts[0].length === 4) date = new Date(parts[0], parts[1] - 1, parts[2]);
-            else date = new Date(parts[2], parts[1] - 1, parts[0]);
+            let day = parseInt(parts[0]);
+            let month = parseInt(parts[1]) - 1;
+            let year = parseInt(parts[2]);
+
+            // Handle Thai BE years (e.g., 67, 68)
+            if (year < 100) year += 2500;
+            if (year > 2400) year -= 543; // Convert BE to AD
+
+            date = new Date(year, month, day);
         }
     }
-    if (isNaN(date.getTime())) return dateString; // Return original if still invalid
+    if (isNaN(date.getTime())) return dateString;
     return new Intl.DateTimeFormat('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
 }
 
@@ -913,7 +919,7 @@ if (importCSVBtn && csvFileInput) {
             try {
                 const csv = event.target.result;
                 const lines = csv.split(/\r?\n/);
-                const results = { ok: [], duplicates: 0, fixed: 0 };
+                const results = { ok: [], duplicates: 0, fixed: 0, skipped: 0 };
 
                 const parseCSVLine = (text) => {
                     const result = [];
@@ -932,8 +938,9 @@ if (importCSVBtn && csvFileInput) {
                 };
 
                 const cleanNumber = (val) => {
-                    if (!val) return 0;
-                    const cleaned = val.toString().replace(/[^0-9.]/g, '');
+                    if (!val || val === '-') return 0;
+                    // Robust number cleaning for values like "4,037"
+                    const cleaned = val.toString().replace(/[^0-9.-]/g, '');
                     return parseFloat(cleaned) || 0;
                 };
 
@@ -942,44 +949,64 @@ if (importCSVBtn && csvFileInput) {
                     if (!line) continue;
 
                     const values = parseCSVLine(line);
-                    if (values.length >= 2) {
-                        let rawDate = values[0] || '';
-                        let formattedDate = rawDate;
-                        const dateMatch = rawDate.match(/(\d{1,4})[\/\-](\d{1,2})[\/\-](\d{1,4})/);
-                        if (dateMatch) {
-                            const [_, d1, d2, d3] = dateMatch;
-                            formattedDate = d1.length === 4 ? `${d1}-${d2.padStart(2, '0')}-${d3.padStart(2, '0')}` : `${d3}-${d2.padStart(2, '0')}-${d1.padStart(2, '0')}`;
-                        }
+                    if (values.length < 2) continue;
 
-                        const rawData = {
-                            date: formattedDate,
-                            name: values[1] || 'ไม่มีชื่อ',
-                            phone: values[2] || '-',
-                            room: values[3] || '-',
-                            nights: parseInt(values[4]) || 0,
-                            expense: cleanNumber(values[5]),
-                            income: cleanNumber(values[6]),
-                            deposit: cleanNumber(values[8]),
-                            note: values[9] || '',
-                            paymentMethod: values[10] || 'cash'
-                        };
-
-                        const analysis = smartImport.analyzeLine(rawData, transactions);
-                        if (analysis.status === 'ok') {
-                            if (analysis.data.aiNote) results.fixed++;
-                            results.ok.push({ ...analysis.data, id: Date.now() + i });
-                        } else if (analysis.status === 'duplicate') {
-                            results.duplicates++;
+                    // Support for Thai Date Format (D-M-68)
+                    let formattedDate = values[0];
+                    if (formattedDate) {
+                        const dateParts = formattedDate.split(/[\/\-]/);
+                        if (dateParts.length === 3) {
+                            let d = dateParts[0].padStart(2, '0');
+                            let m = dateParts[1].padStart(2, '0');
+                            let y = parseInt(dateParts[2]);
+                            if (y < 100) y += 2500;
+                            if (y > 2400) y -= 543;
+                            formattedDate = `${y}-${m}-${d}`;
                         }
+                    }
+
+                    // Special handling for "Balance" column which might contain payment method
+                    let balanceCol = values[7] || '';
+                    let paymentMethod = 'cash';
+                    if (balanceCol.includes('โอน') || balanceCol.includes('บัญชี') || balanceCol.includes('Ascend')) {
+                        paymentMethod = 'transfer';
+                    }
+
+                    const rawData = {
+                        date: formattedDate,
+                        name: values[1] || 'ไม่มีชื่อ',
+                        phone: values[2] || '-',
+                        room: values[3] || '-',
+                        nights: parseInt(values[4]) || 0,
+                        expense: cleanNumber(values[5]),
+                        income: cleanNumber(values[6]),
+                        deposit: cleanNumber(values[8]),
+                        note: values[9] || '',
+                        paymentMethod: paymentMethod
+                    };
+
+                    // Skip "ยกมา" lines to avoid duplication but update starter balance if needed
+                    if (rawData.name.includes('ยกมา') || (!rawData.date && rawData.name === '')) {
+                        results.skipped++;
+                        continue;
+                    }
+
+                    const analysis = smartImport.analyzeLine(rawData, transactions);
+                    if (analysis.status === 'ok') {
+                        if (analysis.data.aiNote) results.fixed++;
+                        results.ok.push({ ...analysis.data, id: Date.now() + i });
+                    } else if (analysis.status === 'duplicate') {
+                        results.duplicates++;
                     }
                 }
 
                 if (results.ok.length > 0) {
                     const summary = smartImport.getSummary(results.ok);
-                    const confirmMsg = `🤖 ผลการวิเคราะห์ข้อมูลโดย AI:
+                    const confirmMsg = `🤖 AI ตรวจวิเคราะห์ข้อมูลจาก Google Sheets เสร็จแล้ว:
 -----------------------------------
 ✅ พร้อมนำเข้า: ${results.ok.length} รายการ
 ⚠️ ข้ามรายการซ้ำ: ${results.duplicates} รายการ
+⏭️ ข้ามบรรทัด 'ยกมา': ${results.skipped} รายการ
 🛠️ ปรับแก้ข้อมูลอัตโนมัติ: ${results.fixed} รายการ
 
 💰 สรุปยอดที่กำลังจะเพิ่ม:
@@ -987,7 +1014,7 @@ if (importCSVBtn && csvFileInput) {
 - รายจ่ายรวม: ${formatCurrency(summary.totalExpense)}
 🔒 มัดจำรวม: ${formatCurrency(summary.totalDeposit)}
 
-คุณต้องการบันทึกข้อมูลเหล่านี้ลงระบบหรือไม่?`;
+คุณต้องการบันทึกข้อมูลเหล่านี้ใช่หรือไม่?`;
 
                     if (confirm(confirmMsg)) {
                         transactions.push(...results.ok);
@@ -1006,14 +1033,14 @@ if (importCSVBtn && csvFileInput) {
                         });
 
                         renderAccounting();
-                        alert('ดำเนินการเสร็จสิ้น! ข้อมูลถูกบันทึกและคำนวนยอดคงเหลือใหม่แล้ว');
+                        alert('นำเข้าข้อมูลสำเร็จและคำนวณยอดเงินเรียบร้อยครับ!');
                     }
                 } else {
-                    alert('🤖 AI ไม่พบข้อมูลใหม่ที่สามารถนำเข้าได้ (ข้อมูลอาจจะซ้ำทั้งหมด)');
+                    alert('🤖 AI ไม่พบข้อมูลใหม่');
                 }
             } catch (error) {
-                console.error('Smart Import Error:', error);
-                alert('เกิดข้อผิดพลาด: ' + error.message);
+                console.error('Expert Import Error:', error);
+                alert('เกิดข้อผิดพลาดในการอ่านข้อมูล: ' + error.message);
             }
         };
         reader.readAsText(file, 'UTF-8');
