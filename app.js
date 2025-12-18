@@ -24,36 +24,61 @@ let transactions = [
 ];
 
 let rooms = [
-    { id: 1, number: '101', type: 'standard', price: 1500, status: 'available', capacity: 2 },
-    { id: 2, number: '102', type: 'standard', price: 1500, status: 'occupied', capacity: 2 },
-    { id: 3, number: '103', type: 'standard', price: 1500, status: 'available', capacity: 2 },
-    { id: 4, number: 'A103', type: 'deluxe', price: 2500, status: 'available', capacity: 3 },
-    { id: 5, number: 'A104', type: 'deluxe', price: 2500, status: 'available', capacity: 3 },
-    { id: 6, number: 'A105', type: 'deluxe', price: 2500, status: 'available', capacity: 3 },
-    { id: 7, number: 'B101', type: 'standard', price: 1500, status: 'available', capacity: 2 },
-    { id: 8, number: 'B103', type: 'standard', price: 1500, status: 'occupied', capacity: 2 },
-    { id: 9, number: 'B104', type: 'standard', price: 1500, status: 'occupied', capacity: 2 },
-    { id: 10, number: 'B105', type: 'standard', price: 1500, status: 'occupied', capacity: 2 },
-    { id: 11, number: 'B106', type: 'standard', price: 1500, status: 'occupied', capacity: 2 },
-    { id: 12, number: 'B107', type: 'standard', price: 1500, status: 'available', capacity: 2 },
-    { id: 13, number: 'N2', type: 'deluxe', price: 2000, status: 'occupied', capacity: 3 },
-    { id: 14, number: 'N6', type: 'deluxe', price: 2000, status: 'occupied', capacity: 3 },
-    { id: 15, number: 'N7', type: 'deluxe', price: 2000, status: 'available', capacity: 3 },
+    { id: 1, number: 'A101', building: 'A', floor: 1, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 2, number: 'A102', building: 'A', floor: 1, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 3, number: 'A103', building: 'A', floor: 1, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 4, number: 'A104', building: 'A', floor: 1, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 5, number: 'A105', building: 'A', floor: 1, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 6, number: 'A106', building: 'A', floor: 1, type: 'twin', price: 500, status: 'available', capacity: 2 },
+    { id: 7, number: 'A107', building: 'A', floor: 1, type: 'twin', price: 500, status: 'available', capacity: 2 },
+    { id: 8, number: 'A108', building: 'A', floor: 1, type: 'twin', price: 500, status: 'available', capacity: 2 },
+    { id: 9, number: 'A109', building: 'A', floor: 1, type: 'twin', price: 500, status: 'available', capacity: 2 },
+    { id: 10, number: 'A110', building: 'A', floor: 1, type: 'twin', price: 500, status: 'available', capacity: 2 },
+    { id: 11, number: 'A111', building: 'A', floor: 1, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 12, number: 'A201', building: 'A', floor: 2, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 13, number: 'A202', building: 'A', floor: 2, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 14, number: 'A203', building: 'A', floor: 2, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 15, number: 'A204', building: 'A', floor: 2, type: 'standard', price: 3500, status: 'occupied', capacity: 2, note: 'รายเดือน' },
+    { id: 16, number: 'A205', building: 'A', floor: 2, type: 'standard', price: 3500, status: 'occupied', capacity: 2, note: 'รายเดือน' },
+    { id: 17, number: 'A206', building: 'A', floor: 2, type: 'standard', price: 3500, status: 'occupied', capacity: 2, note: 'รายเดือน' },
+    { id: 18, number: 'A207', building: 'A', floor: 2, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 19, number: 'A208', building: 'A', floor: 2, type: 'standard', price: 3500, status: 'occupied', capacity: 2, note: 'รายเดือน' },
+    { id: 20, number: 'A209', building: 'A', floor: 2, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 21, number: 'A210', building: 'A', floor: 2, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 22, number: 'A211', building: 'A', floor: 2, type: 'standard', price: 3500, status: 'occupied', capacity: 2, note: 'รายเดือน' },
+    { id: 23, number: 'B101', building: 'B', floor: 1, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 24, number: 'B102', building: 'B', floor: 1, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 25, number: 'B103', building: 'B', floor: 1, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 26, number: 'B104', building: 'B', floor: 1, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 27, number: 'B105', building: 'B', floor: 1, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 28, number: 'B106', building: 'B', floor: 1, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 29, number: 'B107', building: 'B', floor: 1, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 30, number: 'B108', building: 'B', floor: 1, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 31, number: 'B109', building: 'B', floor: 1, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 32, number: 'B110', building: 'B', floor: 1, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 33, number: 'B111', building: 'B', floor: 1, type: 'twin', price: 500, status: 'available', capacity: 2 },
+    { id: 34, number: 'B201', building: 'B', floor: 2, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 35, number: 'B202', building: 'B', floor: 2, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 36, number: 'B203', building: 'B', floor: 2, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 37, number: 'B204', building: 'B', floor: 2, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 38, number: 'B205', building: 'B', floor: 2, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 39, number: 'B206', building: 'B', floor: 2, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 40, number: 'B207', building: 'B', floor: 2, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 41, number: 'B208', building: 'B', floor: 2, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 42, number: 'B209', building: 'B', floor: 2, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 43, number: 'B210', building: 'B', floor: 2, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 44, number: 'B211', building: 'B', floor: 2, type: 'standard', price: 400, status: 'available', capacity: 2 },
+    { id: 45, number: 'N1', building: 'N', floor: 1, type: 'twin', price: 600, status: 'available', capacity: 2 },
+    { id: 46, number: 'N2', building: 'N', floor: 1, type: 'standard', price: 500, status: 'available', capacity: 2 },
+    { id: 47, number: 'N3', building: 'N', floor: 1, type: 'standard', price: 500, status: 'available', capacity: 2 },
+    { id: 48, number: 'N4', building: 'N', floor: 1, type: 'twin', price: 600, status: 'available', capacity: 2 },
+    { id: 49, number: 'N5', building: 'N', floor: 1, type: 'twin', price: 600, status: 'available', capacity: 2 },
+    { id: 50, number: 'N6', building: 'N', floor: 1, type: 'twin', price: 600, status: 'available', capacity: 2 },
+    { id: 51, number: 'N7', building: 'N', floor: 1, type: 'standard', price: 500, status: 'available', capacity: 2 },
 ];
 
-let bookings = [
-    { id: 1, bookingNumber: 'BK-2024-001', customerName: 'พรทิพย์', roomId: 11, checkIn: '2024-12-01', checkOut: '2024-12-03', nights: 2, total: 3000, status: 'confirmed' },
-    { id: 2, bookingNumber: 'BK-2024-002', customerName: 'ชัยศักดิ์', roomId: 13, checkIn: '2024-12-01', checkOut: '2024-12-02', nights: 1, total: 2000, status: 'confirmed' },
-    { id: 3, bookingNumber: 'BK-2024-003', customerName: 'อาทิตย์', roomId: 12, checkIn: '2024-12-01', checkOut: '2024-12-02', nights: 1, total: 1500, status: 'confirmed' },
-    { id: 4, bookingNumber: 'BK-2024-004', customerName: 'สุจิตรา', roomId: 4, checkIn: '2024-12-02', checkOut: '2024-12-04', nights: 2, total: 5000, status: 'confirmed' },
-];
-
-let customers = [
-    { id: 1, customerId: 'CUS-001', name: 'พรทิพย์', email: 'pornthip@example.com', phone: '-', visits: 10, totalSpent: 15000, status: 'active' },
-    { id: 2, customerId: 'CUS-002', name: 'ชัยศักดิ์', email: 'chaisak@example.com', phone: '089-39229374', visits: 5, totalSpent: 10000, status: 'active' },
-    { id: 3, customerId: 'CUS-003', name: 'อาทิตย์', email: 'arthit@example.com', phone: '098-6197361', visits: 3, totalSpent: 4500, status: 'active' },
-    { id: 4, customerId: 'CUS-004', name: 'สุจิตรา', email: 'sujitra@example.com', phone: '-', visits: 2, totalSpent: 5000, status: 'active' },
-];
+let bookings = [];
+let customers = [];
 
 // ===== Utility Functions =====
 function formatCurrency(amount) {
@@ -104,9 +129,9 @@ function getRoomById(id) {
 function getRoomTypeLabel(type) {
     const types = {
         'standard': 'Standard',
+        'twin': 'Standard Twin',
         'deluxe': 'Deluxe',
-        'suite': 'Suite',
-        'executive': 'Executive'
+        'suite': 'Suite'
     };
     return types[type] || type;
 }
