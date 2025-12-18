@@ -69,13 +69,40 @@ const MASTER_ROOMS = [
 ];
 
 const MASTER_TRANSACTIONS_INIT = [
-    { id: 0, date: '2024-12-01', name: 'ยกมา', phone: '-', room: '-', nights: 0, expense: 0, income: 0, balance: 4037, deposit: 0, note: 'ยกมา', paymentMethod: 'cash' },
+    { id: 1, date: '2025-12-01', name: 'ยกมา', phone: '-', room: '-', nights: 0, expense: 0, income: 0, balance: 4037, deposit: 0, note: 'ยกมา', paymentMethod: 'cash' },
+    { id: 2, date: '2025-12-01', name: 'เบิกจ่ายค่าจ้างพนักงาน', phone: '-', room: '-', nights: 0, expense: 775, income: 0, balance: 3262, deposit: 0, note: '-', paymentMethod: 'cash' },
+    { id: 3, date: '2025-12-01', name: 'เบิกค่าซื้ออุปกรณ์ล้อมต้นไม้', phone: '-', room: '-', nights: 0, expense: 400, income: 0, balance: 2862, deposit: 0, note: '-', paymentMethod: 'cash' },
+    { id: 4, date: '2025-12-01', name: 'พรทิพย์', phone: '-', room: 'B106', nights: 1, expense: 0, income: 400, balance: 3262, deposit: 0, note: 'พักต่อ', paymentMethod: 'cash' },
+    { id: 5, date: '2025-12-01', name: 'ชัยศักดิ์', phone: '089-39229374', room: 'N2', nights: 1, expense: 0, income: 500, balance: 3762, deposit: 200, note: '', paymentMethod: 'cash' },
+    { id: 6, date: '2025-12-02', name: 'คุณน้ำส้ม', phone: '-', room: 'B107', nights: 1, expense: 0, income: 400, balance: 4162, deposit: 100, note: '', paymentMethod: 'cash' },
+    { id: 7, date: '2025-12-02', name: 'สุจิตรา', phone: '-', room: 'A103', nights: 2, expense: 0, income: 800, balance: 4962, deposit: 100, note: 'โอนเข้าบัญชี', paymentMethod: 'transfer' },
+    { id: 8, date: '2025-12-02', name: 'เบิกจ่าย ค่ามือถือคุณวิ', phone: '-', room: '-', nights: 0, expense: 1020, income: 0, balance: 3942, deposit: 0, note: '', paymentMethod: 'cash' },
+    { id: 9, date: '2025-12-02', name: 'หักค่ามัดจำ', phone: '-', room: 'A105', nights: 0, expense: 100, income: 0, balance: 3842, deposit: 0, note: '', paymentMethod: 'cash' },
+    { id: 10, date: '2025-12-03', name: 'เบิกจ่ายค่าไฟ รวมทั้งหมด', phone: '-', room: '-', nights: 0, expense: 3538, income: 0, balance: 304, deposit: 0, note: '', paymentMethod: 'cash' },
+    { id: 11, date: '2025-12-03', name: 'พรทิพย์', phone: '-', room: 'B104', nights: 1, expense: 0, income: 400, balance: 704, deposit: 0, note: 'พักต่อ', paymentMethod: 'cash' },
+    { id: 12, date: '2025-12-03', name: 'บุญเกิด', phone: '-', room: 'N7', nights: 1, expense: 0, income: 500, balance: 1204, deposit: 200, note: '', paymentMethod: 'cash' },
+    { id: 13, date: '2025-12-04', name: 'เบิกจ่ายค่าซื้อของแม็คโคร', phone: '-', room: '-', nights: 0, expense: 2535, income: 0, balance: -1331, deposit: 0, note: '', paymentMethod: 'cash' },
+    { id: 14, date: '2025-12-04', name: 'สมรัฐ', phone: '062-5468085', room: 'A104', nights: 1, expense: 0, income: 400, balance: -931, deposit: 100, note: '', paymentMethod: 'cash' },
+    { id: 15, date: '2025-12-05', name: 'ชนกานต์สินธา', phone: '-', room: 'N7', nights: 1, expense: 0, income: 700, balance: -231, deposit: 0, note: 'โอนเข้าบัญชี', paymentMethod: 'transfer' },
+    { id: 16, date: '2025-12-06', name: 'คุณใหญ่', phone: '065-224-9516', room: 'N3', nights: 2, expense: 0, income: 1200, balance: 969, deposit: 0, note: 'โอนเข้าบัญชี', paymentMethod: 'transfer' },
+    { id: 17, date: '2025-12-07', name: 'เบิกซื้อของโกลบอลเฮ้าส์', phone: '-', room: '-', nights: 0, expense: 655, income: 0, balance: 314, deposit: 0, note: '', paymentMethod: 'cash' },
+    { id: 18, date: '2025-12-08', name: 'เบิกจ่ายค่าทำบัญชี พ.ย.68', phone: '-', room: '-', nights: 0, expense: 4800, income: 0, balance: -4486, deposit: 0, note: '', paymentMethod: 'cash' },
+    { id: 19, date: '2025-12-09', name: 'โอนให้คุณวิ', phone: '-', room: '-', nights: 0, expense: 2000, income: 0, balance: -6486, deposit: 0, note: '-', paymentMethod: 'cash' },
+    { id: 20, date: '2025-12-10', name: 'Ascend', phone: 'ID-2169492', room: 'A106', nights: 2, expense: 0, income: 0, balance: -6486, deposit: 0, note: 'Ascend', paymentMethod: 'transfer' },
+    { id: 21, date: '2025-12-11', name: 'ภาณุพงศ์', phone: '092-2839782', room: 'A105', nights: 1, expense: 0, income: 500, balance: -5986, deposit: 0, note: 'โอนบัญชี', paymentMethod: 'transfer' },
+    { id: 22, date: '2025-12-12', name: 'บริษัทน้ำดื่มไฮโซ', phone: '-', room: 'A103', nights: 1, expense: 0, income: 400, balance: -5586, deposit: 100, note: '', paymentMethod: 'cash' },
+    { id: 23, date: '2025-12-13', name: 'เบิกโอนให้คุณวิ', phone: '-', room: '-', nights: 0, expense: 3000, income: 0, balance: -8586, deposit: 0, note: '', paymentMethod: 'cash' },
+    { id: 24, date: '2025-12-14', name: 'ขนิษฐากานต์', phone: '-', room: 'A104', nights: 1, expense: 0, income: 400, balance: -8186, deposit: 0, note: 'พักต่อ', paymentMethod: 'cash' },
+    { id: 25, date: '2025-12-15', name: 'สมปอง', phone: '086-5731517', room: 'A111', nights: 1, expense: 0, income: 400, balance: -7786, deposit: 100, note: '', paymentMethod: 'cash' },
+    { id: 26, date: '2025-12-16', name: 'นางอุดมลักษณ์ (ชำระค่ามัดจำ)', phone: '-', room: 'A207', nights: 0, expense: 0, income: 3500, balance: -4286, deposit: 0, note: 'ห้องเช่ารายเดือน', paymentMethod: 'cash' },
+    { id: 27, date: '2025-12-17', name: 'ทีมงานกองปราบ รวม 11 ห้อง', phone: '-', room: '-', nights: 1, expense: 0, income: 5500, balance: 1214, deposit: 0, note: 'ชำระค่าห้อง', paymentMethod: 'transfer' },
+    { id: 28, date: '2025-12-17', name: 'สมชาย', phone: '092-2812637', room: 'A102', nights: 1, expense: 0, income: 500, balance: 1714, deposit: 0, note: 'โอนเข้าบัญชี', paymentMethod: 'transfer' }
 ];
 
 // Data state holders
 let rooms = [];
 let bookings = [];
-let customers = [];
+let customers = MASTER_CUSTOMERS_LIST; // Using previously defined master customers
 let transactions = [];
 
 // ===== Database Engine =====
