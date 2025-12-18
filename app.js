@@ -10,7 +10,33 @@ const STORAGE_KEYS = {
     BOOKINGS: 'hotel_db_bookings',
     CUSTOMERS: 'hotel_db_customers',
     TRANSACTIONS: 'hotel_db_transactions',
-    CONFIG: 'hotel_db_config'
+    CONFIG: 'hotel_db_config',
+    GAS_URL: 'hotel_gas_url' // สำหรับเก็บ URL ของ Google App Script
+};
+
+// ===== Cloud Sync Engine (Google Apps Script Connector) =====
+const CloudSync = {
+    get url() {
+        return localStorage.getItem(STORAGE_KEYS.GAS_URL) || '';
+    },
+
+    setURL(val) {
+        localStorage.setItem(STORAGE_KEYS.GAS_URL, val);
+    },
+
+    async request(action, data = {}) {
+        if (!this.url) return { error: 'กรุณาตั้งค่า Google Script URL' };
+        try {
+            const response = await fetch(this.url, {
+                method: 'POST',
+                body: JSON.stringify({ action, data })
+            });
+            return await response.json();
+        } catch (e) {
+            console.error('Cloud Sync Error:', e);
+            return { error: 'ไม่สามารถติดต่อ Google Script ได้' };
+        }
+    }
 };
 
 // ===== Initial Master Data (Fallback) =====
@@ -259,7 +285,16 @@ navItems.forEach(item => {
 });
 
 // ===== Dashboard Module =====
-function renderDashboard() {
+async function renderDashboard() {
+    // If Cloud URL exists, attempt to fetch live stats
+    if (CloudSync.url) {
+        console.log('Fetching live data from Cloud...');
+        const cloudData = await CloudSync.request('getDashboard');
+        if (cloudData && !cloudData.error) {
+            // Update UI with Cloud Data if needed
+        }
+    }
+
     const activeBookings = bookings.filter(b => b.status === 'confirmed').length;
     const availableRooms = rooms.filter(r => r.status === 'available').length;
     const totalTransactions = transactions.length;
