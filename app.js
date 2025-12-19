@@ -203,13 +203,40 @@ const UI = {
     renderRoomsGrid() {
         const grid = document.getElementById('roomsGrid');
         if (!grid) return;
-        grid.innerHTML = DB.state.rooms.map(r => `
-            <div class="room-card ${r.room_status.toLowerCase()}">
-                <div class="number">${r.room_number}</div>
-                <div class="type">${r.room_type}</div>
-                <div class="mt-2 fw-bold">฿${r.price_per_night}</div>
-            </div>
-        `).join('');
+
+        // Group rooms by building
+        const buildings = {};
+        DB.state.rooms.forEach(r => {
+            const b = r.building || 'อื่นๆ';
+            if (!buildings[b]) buildings[b] = [];
+            buildings[b].push(r);
+        });
+
+        // Generate HTML
+        let html = '';
+        Object.keys(buildings).sort().forEach(bName => {
+            html += `
+                <div class="building-section mb-4">
+                    <div class="building-header">
+                        <i class='bx bxs-business'></i> ตึก ${bName}
+                    </div>
+                    <div class="room-grid">
+                        ${buildings[bName].map(r => `
+                            <div class="room-card ${r.room_status.toLowerCase()}">
+                                <div class="number">${r.room_number}</div>
+                                <div class="type">${r.room_type}</div>
+                                <div class="mt-2 fw-bold">฿${r.price_per_night.toLocaleString()}</div>
+                                ${r.note === 'รายเดือน' ? '<div class="badge bg-warning text-dark mt-1" style="font-size:0.6rem">รายเดือน</div>' : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        });
+
+        grid.innerHTML = html;
+        // Adjust the container class as we now use internal grids
+        grid.classList.remove('room-grid');
     },
 
     renderGuests() {
