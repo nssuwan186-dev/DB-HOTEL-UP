@@ -188,15 +188,32 @@ const UI = {
         const chartEl = document.querySelector("#chartIncome");
         if (!chartEl) return;
 
-        const monthlyData = [400, 3600, 1200];
+        // Calculate real data from payments
+        const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+        const currentYear = new Date().getFullYear();
+        const monthlyData = new Array(12).fill(0);
+
+        DB.state.payments.forEach(p => {
+            const d = new Date(p.payment_date);
+            if (d.getFullYear() === currentYear || (d.getFullYear() === 2025)) {
+                monthlyData[d.getMonth()] += p.amount;
+            }
+        });
+
+        // Get last 6 months for clear view
         const options = {
-            series: [{ name: 'รายรับสะสม (Revenue Mix)', data: monthlyData }],
+            series: [{ name: 'รายรับรวม (฿)', data: monthlyData }],
             chart: { type: 'area', height: 350, toolbar: { show: false }, animations: { enabled: true } },
             colors: ['#0d6efd'],
-            fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.7, opacityTo: 0.3 } },
-            xaxis: { categories: ['ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'] },
-            dataLabels: { enabled: true, formatter: (v) => "฿" + v.toLocaleString() }
+            stroke: { curve: 'smooth', width: 3 },
+            fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.6, opacityTo: 0.1 } },
+            xaxis: { categories: months },
+            dataLabels: { enabled: false },
+            tooltip: { y: { formatter: (v) => "฿" + v.toLocaleString() } }
         };
+
+        // Clear old chart if exists
+        chartEl.innerHTML = '';
         new ApexCharts(chartEl, options).render();
     },
 
