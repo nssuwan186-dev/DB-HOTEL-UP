@@ -250,67 +250,120 @@ const UI = {
         const booking = DB.state.bookings.find(b => b.booking_id === bookingId);
         if (!booking) return;
 
-        const guest = DB.state.guests.find(g => g.guest_id === booking.guest_id) || { first_name: 'Unknown', address: '-', tax_id: '-' };
+        const guest = DB.state.guests.find(g => g.guest_id === booking.guest_id) || { first_name: 'Unknown', address: '-', tax_id: '-', phone_number: '-' };
         const room = DB.state.rooms.find(r => r.room_id === booking.room_id) || { room_number: '?', room_type: 'Standard' };
 
-        const vatRate = 0.07;
+        // VAT Calculation matching the image (Total includes VAT)
         const total = booking.total_amount;
-        const basePrice = total / (1 + vatRate);
-        const vatAmount = total - basePrice;
+        const totalExclVat = total / 1.07;
+        const vatAmount = total - totalExclVat;
+        const thaiText = this.numToThaiText(total);
 
-        const billHtml = `
-            <div id="billContainer" class="p-5 bg-white text-dark shadow-sm mx-auto" style="max-width: 800px; border: 1px solid #ddd; font-family: 'Kanit', sans-serif;">
-                <div class="d-flex justify-content-between border-bottom pb-3 mb-4">
-                    <div>
-                        <h4 class="fw-bold text-primary mb-1">บริษัท วิวัฒน์โฮเทล.ดีเวลอปเมนท์ จำกัด</h4>
-                        <p class="small text-muted mb-1 text-wrap" style="max-width:300px;">426 หมู่ที่ 9 ต.บึงกาฬ อ.เมืองบึงกาฬ จ.บึงกาฬ 38000</p>
-                        <p class="small text-muted mb-0">เลขประจำตัวผู้เสียภาษี: 0-3855-59000-07-5</p>
+        const renderReceipt = (typeLabel) => `
+            <div class="receipt-paper p-4" style="width: 50%; display: inline-block; vertical-align: top; font-family: 'Kanit', sans-serif; font-size: 11px; background: white; border-right: 1px dashed #ccc;">
+                <!-- Header -->
+                <div class="d-flex justify-content-between mb-2">
+                    <div style="width: 60%;">
+                        <div class="d-flex align-items-center mb-2">
+                            <div style="width: 40px; height: 40px; background: #FFD700; border-radius: 50%; margin-right: 10px; opacity: 0.6;"></div>
+                            <h6 class="fw-bold mb-0" style="color: #004a99; font-size: 14px;">บริษัท วิวัฒน์โฮเทล.ดีเวลอปเมนท์ จำกัด</h6>
+                        </div>
+                        <p class="mb-0 text-muted" style="font-size: 10px;">426 หมู่ที่ 9 ตำบลบึงกาฬ อำเภอเมืองบึงกาฬ จังหวัดบึงกาฬ 38000</p>
+                        <p class="mb-0 text-muted" style="font-size: 10px;">โทร 080-6254859, 042-492641</p>
+                        <p class="mb-2 text-muted" style="font-size: 10px;">เลขประจำตัวผู้เสียภาษีอากร: 0-3855-59000-07-5</p>
+                        
+                        <div class="mt-3">
+                            <span class="fw-bold">ชื่อลูกค้า</span><br>
+                            <strong>${guest.first_name} ${guest.last_name || ''}</strong><br>
+                            ${guest.address}<br>
+                            ${guest.phone_number}<br>
+                            ${guest.tax_id || ''}
+                        </div>
                     </div>
-                    <div class="text-end">
-                        <h5 class="fw-bold mb-1">ใบเสร็จรับเงิน/ใบกำกับภาษี</h5>
-                        <p class="mb-0">เลขที่: <strong>${booking.booking_id}</strong></p>
-                        <p class="mb-0 small text-muted">วันที่: ${new Date().toLocaleDateString('th-TH')}</p>
+                    <div class="text-end" style="width: 40%;">
+                        <h5 class="fw-bold" style="color: #0088cc; font-size: 16px;">ใบเสร็จรับเงิน / ใบกำกับภาษี</h5>
+                        <div class="text-end mt-1" style="font-size: 10px;">${typeLabel}</div>
+                        <div class="mt-3">
+                            <div class="d-flex justify-content-between"><span style="color: #0088cc;">เลขที่เอกสาร</span> <span>${booking.booking_id}</span></div>
+                            <div class="d-flex justify-content-between"><span style="color: #0088cc;">วันที่</span> <span>${booking.check_in_date}</span></div>
+                            <div class="d-flex justify-content-between"><span style="color: #0088cc;">ชำระเงินโดย</span> <span>เงินโอน QR</span></div>
+                        </div>
                     </div>
                 </div>
-                <div class="row mb-4">
-                    <div class="col-8">
-                        <h6 class="fw-bold text-muted border-bottom pb-1 mb-2">นามผู้ซื้อ/ลูกค้า</h6>
-                        <p class="mb-1"><strong>คุณ ${guest.first_name} ${guest.last_name || ''}</strong></p>
-                        <p class="small mb-1 text-muted">${guest.address}</p>
-                        <p class="small mb-0">TAX ID: ${guest.tax_id || '-'}</p>
-                    </div>
-                </div>
-                <table class="table table-bordered small">
-                    <thead class="bg-light text-center">
-                        <tr><th>ลำดับ</th><th>รายการรายละเอียด</th><th>จำนวน</th><th>จำนวนเงิน</th></tr>
+
+                <!-- Table -->
+                <table class="table table-sm mt-3" style="border: 1px solid #cce5ff;">
+                    <thead style="background: #cce5ff; color: #004a99;">
+                        <tr>
+                            <th class="text-center" width="10%">No.</th>
+                            <th width="50%">รายการ</th>
+                            <th class="text-center" width="20%">ระยะเวลา</th>
+                            <th class="text-end" width="20%">ราคารวม</th>
+                        </tr>
                     </thead>
                     <tbody>
-                        <tr style="height: 120px;">
+                        <tr style="height: 60px;">
                             <td class="text-center">1</td>
-                            <td>บริการที่พักห้อง ${room.room_number} (${room.room_type})<br><small class="text-muted">Stay period: ${booking.check_in_date} - ${booking.check_out_date}</small></td>
+                            <td>ค่าห้องพัก ${room.room_type} ${room.room_number} (${booking.check_in_date})</td>
                             <td class="text-center">${booking.nights} คืน</td>
                             <td class="text-end">${total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                         </tr>
                     </tbody>
-                    <tfoot>
-                        <tr><td colspan="2" class="border-0"></td><td class="text-end fw-bold">ก่อนภาษี (Subtotal)</td><td class="text-end">${basePrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td></tr>
-                        <tr><td colspan="2" class="border-0"></td><td class="text-end fw-bold">VAT 7%</td><td class="text-end">${vatAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td></tr>
-                        <tr class="table-primary fw-bold">
-                            <td colspan="2" class="border-0 text-center small">(${this.numToThaiText(total)})</td>
-                            <td class="text-end">ยอดเงินสุทธิ</td>
-                            <td class="text-end">฿${total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                        </tr>
-                    </tfoot>
                 </table>
-                <div class="mt-5 pt-3 d-flex justify-content-between text-center">
-                    <div style="width: 200px;"><div class="border-bottom mb-2"></div><p class="small">ผู้รับเงิน / Cashier</p></div>
-                    <div style="width: 200px;"><div class="border-bottom mb-2"></div><p class="small">ผู้มีอำนาจลงนาม / Authorized</p></div>
+
+                <!-- Summary -->
+                <div class="row mt-4">
+                    <div class="col-6 pt-5">
+                        <span class="fw-bold">(${thaiText})</span>
+                    </div>
+                    <div class="col-6">
+                        <div class="d-flex justify-content-between mb-1"><span style="color: #0088cc;">รวมเป็นเงิน</span> <span>${total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span></div>
+                        <div class="d-flex justify-content-between mb-1"><span style="color: #0088cc;">ภาษีมูลค่าเพิ่ม 7%</span> <span>${vatAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span></div>
+                        <div class="d-flex justify-content-between mb-1"><span style="color: #0088cc;">ราคาไม่รวมภาษีมูลค่าเพิ่ม</span> <span>${totalExclVat.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span></div>
+                        <div class="d-flex justify-content-between fw-bold" style="border-top: 1px solid #0088cc; padding-top: 5px;"><span style="color: #0088cc;">จำนวนเงินรวมทั้งสิ้น</span> <span>${total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span></div>
+                    </div>
                 </div>
-                <div class="mt-4 text-center d-print-none">
-                    <button class="btn btn-dark px-4" onclick="window.print()"><i class='bx bx-printer'></i> พิมพ์เอกสาร</button>
-                    <button class="btn btn-outline-secondary px-4" onclick="bootstrap.Modal.getInstance(document.getElementById('receiptModal')).hide()">ปิด</button>
+
+                <!-- Footer Signatures -->
+                <div class="row mt-5 text-center" style="font-size: 10px;">
+                    <div class="col-4">
+                        <div style="border-top: 1px dotted #999; margin: 0 10px;"></div>
+                        ผู้จ่ายเงิน
+                    </div>
+                    <div class="col-2">
+                        <div style="border-top: 1px dotted #999; margin: 0 5px;"></div>
+                        วันที่
+                    </div>
+                    <div class="col-4">
+                        <div style="border-top: 1px dotted #999; margin: 0 10px;"></div>
+                        ผู้รับเงิน
+                    </div>
+                    <div class="col-2">
+                        <div style="border-top: 1px dotted #999; margin: 0 5px;"></div>
+                        วันที่
+                    </div>
                 </div>
             </div>
+        `;
+
+        const billHtml = `
+            <div class="receipt-container" style="width: 1100px; margin: 0 auto; display: flex; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+                ${renderReceipt('ต้นฉบับ')}
+                ${renderReceipt('สำเนา')}
+            </div>
+            <div class="mt-4 text-center d-print-none">
+                <button class="btn btn-dark px-4" onclick="window.print()"><i class='bx bx-printer'></i> พิมพ์ใบเสร็จ (A4 แนวนอน)</button>
+                <button class="btn btn-outline-secondary px-4" onclick="bootstrap.Modal.getInstance(document.getElementById('receiptModal')).hide()">ปิด</button>
+            </div>
+            <style>
+                @media print {
+                    @page { size: A4 landscape; margin: 0.5cm; }
+                    body * { visibility: hidden; }
+                    .receipt-container, .receipt-container * { visibility: visible; }
+                    .receipt-container { position: absolute; left: 0; top: 0; box-shadow: none !important; width: 100% !important; }
+                    .d-print-none { display: none !important; }
+                }
+            </style>
         `;
 
         document.getElementById('receiptModalContent').innerHTML = billHtml;
@@ -318,8 +371,9 @@ const UI = {
     },
 
     numToThaiText(number) {
-        const textMap = { 400: "สี่ร้อยบาทถ้วน", 800: "แปดร้อยบาทถ้วน", 1200: "หนึ่งพันสองร้อยบาทถ้วน" };
-        return textMap[number] || "ระบุไม่ได้";
+        // Simple Thai number to text converter (for common amounts 400, 800, etc.)
+        const thaiNums = { 400: "สี่ร้อยบาทถ้วน", 800: "แปดร้อยบาทถ้วน", 1200: "หนึ่งพันสองร้อยบาทถ้วน", 3500: "สามพันห้าร้อยบาทถ้วน" };
+        return thaiNums[number] || "ระบุยอดเงินไม่ได้";
     },
 
     renderAccounting() {
