@@ -55,7 +55,7 @@ const DB = {
             this.state.guests = this.load(STORAGE_KEYS.GUESTS) || (window.IMPORTED_GUESTS) || MASTER_GUESTS;
             this.state.rooms = this.load(STORAGE_KEYS.ROOMS) || (window.IMPORTED_ROOMS) || MASTER_ROOMS;
             this.state.bookings = this.load(STORAGE_KEYS.BOOKINGS) || (window.IMPORTED_BOOKINGS) || MASTER_BOOKINGS;
-            this.state.payments = this.load(STORAGE_KEYS.PAYMENTS) || MASTER_PAYMENTS;
+            this.state.payments = this.load(STORAGE_KEYS.PAYMENTS) || (window.IMPORTED_PAYMENTS) || MASTER_PAYMENTS;
             this.state.expenses = this.load(STORAGE_KEYS.EXPENSES) || [];
             this.state.employees = this.load(STORAGE_KEYS.EMPLOYEES) || [{ salary: 15000 }];
             this.state.gas_url = localStorage.getItem(STORAGE_KEYS.GAS_URL) || "";
@@ -373,9 +373,34 @@ const UI = {
     },
 
     numToThaiText(number) {
-        // Simple Thai number to text converter (for common amounts 400, 800, etc.)
-        const thaiNums = { 400: "สี่ร้อยบาทถ้วน", 800: "แปดร้อยบาทถ้วน", 1200: "หนึ่งพันสองร้อยบาทถ้วน", 3500: "สามพันห้าร้อยบาทถ้วน" };
-        return thaiNums[number] || "ระบุยอดเงินไม่ได้";
+        let txtNum = number.toFixed(2).split(".");
+        let baht = txtNum[0];
+        let satang = txtNum[1];
+        let bahtText = "";
+        let unit = ["", "สิบ", "ร้อย", "พัน", "หมื่น", "แสน", "ล้าน"];
+        let num = ["ศูนย์", "หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า"];
+
+        if (parseFloat(number) === 0) return "ศูนย์บาทถ้วน";
+
+        for (let i = 0; i < baht.length; i++) {
+            let digit = baht.charAt(i);
+            let pos = baht.length - i - 1;
+            if (digit !== "0") {
+                if (pos % 6 === 1 && digit === "1") bahtText += "";
+                else if (pos % 6 === 1 && digit === "2") bahtText += "ยี่";
+                else if (pos % 6 === 0 && digit === "1" && i > 0) bahtText += "เอ็ด";
+                else bahtText += num[digit];
+                bahtText += unit[pos % 6];
+            }
+            if (pos % 6 === 0 && pos > 0) bahtText += unit[6];
+        }
+        bahtText += "บาท";
+        if (satang === "00") bahtText += "ถ้วน";
+        else {
+            // Handle satang if needed, but usually hotel rooms are round numbers
+            bahtText += " (มีเศษสตางค์)";
+        }
+        return bahtText;
     },
 
     renderAccounting() {
