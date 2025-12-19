@@ -59,11 +59,35 @@ const DB = {
             this.state.employees = this.load(STORAGE_KEYS.EMPLOYEES) || [{ salary: 15000 }];
             this.state.gas_url = localStorage.getItem(STORAGE_KEYS.GAS_URL) || "";
 
-            console.log("DB Stats: Guests:", this.state.guests.length, "Rooms:", this.state.rooms.length);
+            this.seedManualLedger(); // เติมข้อมูลจากสมุดบัญชีจริง
             this.saveAll();
         } catch (e) {
             console.error("Database initialization failed", e);
         }
+    },
+    seedManualLedger() {
+        if (this.state.payments.some(p => p.payment_date === '1-12-68' || p.payment_date === '2025-12-01')) return;
+
+        // ข้อมูลตัวอย่างชุดจริงจากสมุดบัญชี
+        const realData = [
+            { date: '2025-12-01', title: 'เบิกจ่ายค่าจ้างพนักงาน', exp: 775, note: 'ยอดยกมา 4,037' },
+            { date: '2025-12-01', title: 'พรทิพย์', room: 'B106', nights: 1, inc: 400, note: 'พักต่อ' },
+            { date: '2025-12-01', title: 'ชัยศักดิ์', room: 'N2', nights: 1, inc: 500, deposit: '200', phone: '089-39229374' }
+        ];
+
+        realData.forEach(d => {
+            if (d.exp) {
+                this.state.expenses.push({ id: 'E-' + Date.now() + Math.random(), title: d.title, amount: d.exp, date: d.date, note: d.note });
+            } else {
+                const gid = 'G-LEDGER-' + d.title;
+                const bid = 'BK-LEDGER-' + d.date + '-' + d.room;
+                if (!this.state.guests.find(g => g.guest_id === gid)) {
+                    this.state.guests.push({ guest_id: gid, first_name: d.title, phone_number: d.phone || '-', address: '-', tax_id: '' });
+                }
+                this.state.bookings.push({ booking_id: bid, guest_id: gid, room_id: d.room, nights: d.nights, total_amount: d.inc, check_in_date: d.date, deposit: d.deposit || '-' });
+                this.state.payments.push({ payment_id: 'PAY-' + bid, booking_id: bid, amount: d.inc, payment_date: d.date, payment_method: 'เงินสด' });
+            }
+        });
     },
     load(key) {
         try {
@@ -347,20 +371,22 @@ const UI = {
         `;
 
         const billHtml = `
-            <div class="receipt-container" style="width: 1100px; margin: 0 auto; display: flex; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+            <div class="receipt-container" style="width: 1080px; margin: 0 auto; display: flex; background: #f8f9fa; padding: 10px;">
                 ${renderReceipt('ต้นฉบับ')}
                 ${renderReceipt('สำเนา')}
             </div>
             <div class="mt-4 text-center d-print-none">
-                <button class="btn btn-dark px-4" onclick="window.print()"><i class='bx bx-printer'></i> พิมพ์ใบเสร็จ (A4 แนวนอน)</button>
-                <button class="btn btn-outline-secondary px-4" onclick="bootstrap.Modal.getInstance(document.getElementById('receiptModal')).hide()">ปิด</button>
+                <button class="btn btn-primary px-5 py-2 fw-bold" onclick="window.print()"><i class='bx bx-printer'></i> พิมพ์ใบเสร็จ (A4 แนวนอน)</button>
+                <button class="btn btn-outline-secondary px-4 ms-2" onclick="bootstrap.Modal.getInstance(document.getElementById('receiptModal')).hide()">ปิดหน้าต่าง</button>
             </div>
             <style>
+                .receipt-paper { width: 520px !important; margin: 5px; box-shadow: 0 0 5px rgba(0,0,0,0.05); }
                 @media print {
-                    @page { size: A4 landscape; margin: 0.5cm; }
+                    @page { size: A4 landscape; margin: 0; }
                     body * { visibility: hidden; }
                     .receipt-container, .receipt-container * { visibility: visible; }
-                    .receipt-container { position: absolute; left: 0; top: 0; box-shadow: none !important; width: 100% !important; }
+                    .receipt-container { position: absolute; left: 0; top: 0; width: 100% !important; background: white !important; box-shadow: none !important; }
+                    .receipt-paper { border: 1px solid #eee !important; box-shadow: none !important; }
                     .d-print-none { display: none !important; }
                 }
             </style>
