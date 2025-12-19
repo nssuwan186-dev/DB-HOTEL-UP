@@ -148,6 +148,40 @@ const CloudEngine = {
             if (statusEl) statusEl.innerText = "สถานะ: การเชื่อมต่อล้มเหลว (ตรวจสอบการตั้งค่า GAS)";
             return { status: 'error', error: e };
         }
+    },
+
+    async pull() {
+        const url = DB.state.gas_url;
+        if (!url) return alert("กรุณาตั้งค่า GAS URL ก่อน");
+
+        UI.showLoading();
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'fetch' })
+            });
+            const result = await response.json();
+            if (result.status === 'success' && result.data) {
+                // Map Cloud Array back to Payments
+                const cloudPayments = result.data.map((r, i) => ({
+                    payment_id: 'P-CLOUD-' + i,
+                    booking_id: 'BK-CLOUD-' + i,
+                    amount: parseFloat(r[6]) || 0,
+                    payment_date: r[0],
+                    payment_method: r[9] || 'เงินสด'
+                }));
+
+                DB.state.payments = cloudPayments;
+                DB.saveAll();
+
+                alert("ดึงข้อมูลสำเร็จ! ข้อมูลในแอปและชีตจะตรงกันแล้ว");
+                location.reload();
+            }
+        } catch (e) {
+            alert("ดึงข้อมูลล้มเหลว: " + e.message);
+        } finally {
+            UI.hideLoading();
+        }
     }
 };
 
