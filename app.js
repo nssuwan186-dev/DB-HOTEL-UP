@@ -626,6 +626,47 @@ const UI = {
         if (count > 0) {
             resultEl.innerText = `คนละ ฿${(total / count).toLocaleString()}`;
         }
+    },
+
+    populateRoomDropdown() {
+        const select = document.getElementById('b-room');
+        if (!select) return;
+        const currentVal = select.value;
+        select.innerHTML = '<option value="">เลือกห้องที่ว่าง...</option>';
+        DB.state.rooms.forEach(r => {
+            if (r.room_status === 'Available') {
+                const opt = document.createElement('option');
+                opt.value = r.room_id;
+                opt.innerText = `${r.room_number} (${r.room_type}) - ฿${r.price_per_night}`;
+                select.appendChild(opt);
+            }
+        });
+        if (currentVal) select.value = currentVal;
+    },
+
+    setupGuestLookup() {
+        const nameInput = document.getElementById('searchName');
+        if (!nameInput) return;
+
+        nameInput.addEventListener('input', (e) => {
+            const val = e.target.value.toLowerCase();
+            if (val.length < 2) return;
+
+            const match = DB.state.guests.find(g =>
+                (g.first_name + ' ' + (g.last_name || '')).toLowerCase().includes(val) ||
+                g.phone_number.includes(val)
+            );
+
+            if (match) {
+                // Show hint or auto-fill
+                document.getElementById('custPhone').value = match.phone_number;
+                document.getElementById('custAddress').value = match.address || '-';
+                // Store match for reuse
+                this.selectedGuestId = match.guest_id;
+            } else {
+                this.selectedGuestId = null;
+            }
+        });
     }
 };
 
@@ -681,6 +722,8 @@ document.addEventListener('DOMContentLoaded', () => {
             CloudEngine.sync();
         }
         UI.renderDashboard();
+        UI.populateRoomDropdown();
+        UI.setupGuestLookup();
         initSidebar();
         UI.hideLoading();
 
@@ -695,23 +738,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (form) {
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const booking = {
-                    booking_id: 'BK-' + Date.now().toString().slice(-6),
-                    guest_id: 'G-' + Date.now().toString().slice(-4),
-                    room_id: parseInt(document.getElementById('b-room').value),
-                    check_in_date: document.getElementById('b-in').value,
-                    nights: Math.max(1, (new Date(document.getElementById('b-out').value) - new Date(document.getElementById('b-in').value)) / (1000 * 60 * 60 * 24)),
-                    total_amount: parseFloat(document.getElementById('b-total-input').value),
-                    channel: document.getElementById('b-channel').value,
-                    payment_method: document.getElementById('b-payment').value
-                };
-
+                const guestName = document.getElementById('searchName').value;
                 const guest = {
-                    guest_id: booking.guest_id,
-                    first_name: document.getElementById('searchName').value,
+                    guest_id: UI.selectedGuestId || ('G-' + Date.now().toString().slice(-4)),
+                    first_name: guestName,
                     phone_number: document.getElementById('custPhone').value,
                     address: document.getElementById('custAddress').value,
                     tax_id: document.getElementById('custAddress').value.match(/\d{13}/) ? document.getElementById('custAddress').value.match(/\d{13}/)[0] : ''
+                };
+
+                const booking = {
+                    booking_id: 'BK-' + Date.now().toString().slice(-6),
+                    guest_id: guest.guest_id,
+                    room_id: parseInt(document.getElementById('b-room').value),
+                    check_in_date: document.getElementById('b-in').value,
+                    nights: Math.max(1, Math.ceil((new Date(document.getElementById('b-out').value) - new Date(document.getElementById('b-in').value)) / (1000 * 60 * 60 * 24))),
+                    total_amount: parseFloat(document.getElementById('b-total-input').value),
+                    channel: document.getElementById('b-channel').value,
+                    payment_method: document.getElementById('b-payment').value
                 };
 
                 // Basic Validation
@@ -719,12 +763,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     alert("กรุณาระบุข้อมูลห้องพักและราคาให้ครบถ้วน");
                     return;
                 }
-                if (new Date(booking.check_in_date) > new Date()) {
-                    // console.warn("Check-in in the future is allowed for booking.");
+
+                // Update Room Status
+                const roomIndex = DB.state.rooms.findIndex(r => r.room_id === booking.room_id);
+                if (roomIndex !== -1) {
+                    DB.state.rooms[roomIndex].room_status = 'Occupied';
                 }
 
                 DB.state.bookings.push(booking);
-                DB.state.guests.push(guest);
+                // Only add guest if it's a new one
+                if (!DB.state.guests.find(g => g.guest_id === guest.guest_id)) {
+                    DB.state.guests.push(guest);
+                }
+
                 DB.state.payments.push({
                     payment_id: 'P-' + booking.booking_id,
                     booking_id: booking.booking_id,
@@ -734,11 +785,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 DB.saveAll();
-                alert("บันทึกสำเร็จ! ข้อมูลถูกสำรองและกำลังซิงค์ Cloud...");
+                alert("บันทึกข้อมูลและอัปเดตสถานะห้องพักสำเร็จ!");
                 await CloudEngine.sync();
                 form.reset();
                 document.getElementById('calcDetail').innerText = "รายละเอียด: -";
+                UI.populateRoomDropdown();
                 UI.renderDashboard();
+                UI.renderRoomsGrid();
             });
         }
 
