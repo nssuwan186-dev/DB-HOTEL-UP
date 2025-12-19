@@ -116,36 +116,52 @@ const DB = {
 const CloudEngine = {
     async sync() {
         const url = DB.state.gas_url;
-        if (!url) return { status: 'idle', message: 'ยังไม่ได้ตั้งค่า Cloud' };
-
-        const statusEl = document.getElementById('syncStatus');
-        if (statusEl) statusEl.innerText = "สถานะ: กำลังซิงค์ข้อมูล...";
+        if (!url) return { status: 'idle' };
 
         try {
-            console.log("Syncing to Cloud...");
+            // เตรียมข้อมูล "สมุดบัญชีรายวัน" ให้เป็น 10 คอลัมน์ตามชีตจริง
+            const ledgerEntries = [];
+
+            // 1. รวมข้อมูลรายรับ (Payments)
+            DB.state.payments.forEach(p => {
+                const b = DB.state.bookings.find(bk => bk.booking_id === p.booking_id) || {};
+                const g = DB.state.guests.find(gs => gs.guest_id === b.guest_id) || {};
+                const r = DB.state.rooms.find(rm => rm.room_id === b.room_id) || {};
+
+                ledgerEntries.push([
+                    p.payment_date,
+                    g.first_name || 'ชำระค่าห้อง',
+                    g.phone_number || '-',
+                    r.room_number || '-',
+                    b.nights || 0,
+                    0, // จ่าย
+                    p.amount, // รับ
+                    0, // คงเหลือ (GAS จะคำนวณให้)
+                    b.deposit || '-',
+                    p.payment_method || 'เงินสด'
+                ]);
+            });
+
+            // 2. รวมข้อมูลรายจ่าย (Expenses)
+            DB.state.expenses.forEach(e => {
+                ledgerEntries.push([e.date, e.title, '-', '-', '-', e.amount, 0, 0, '-', e.note]);
+            });
+
             const response = await fetch(url, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'text/plain;charset=utf-8',
-                },
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify({
-                    action: 'sync',
-                    data: DB.state
+                    action: 'sync_all',
+                    ledger: ledgerEntries,
+                    guests: DB.state.guests,
+                    bookings: DB.state.bookings
                 })
             });
 
             const result = await response.json();
-            console.log("Cloud Response:", result);
-
-            if (result.status === 'success') {
-                if (statusEl) statusEl.innerText = "สถานะ: เชื่อมต่อล่าสุด " + new Date().toLocaleTimeString();
-                return result;
-            } else {
-                throw new Error(result.message || "Cloud Error");
-            }
+            return result;
         } catch (e) {
-            console.error("Sync Error:", e);
-            if (statusEl) statusEl.innerText = "สถานะ: การเชื่อมต่อล้มเหลว (ตรวจสอบการตั้งค่า GAS)";
+            console.error("Sync failed", e);
             return { status: 'error', error: e };
         }
     },
