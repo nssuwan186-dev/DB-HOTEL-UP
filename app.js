@@ -396,6 +396,24 @@ const UI = {
 
 // ===== 7.0 GLOBAL FUNCTIONS & HANDLERS =====
 
+// Auto-Calculate Total
+function calculateTotal() {
+    const checkIn = document.getElementById('b-in').value;
+    const checkOut = document.getElementById('b-out').value;
+    const roomId = parseInt(document.getElementById('b-room').value);
+    const extra = parseFloat(document.getElementById('b-extra').value) || 0;
+
+    if (checkIn && checkOut && !isNaN(roomId)) {
+        const room = DB.state.rooms.find(r => r.room_id === roomId);
+        if (room) {
+            document.getElementById('b-price-night').value = room.price_per_night;
+            const nights = Math.max(1, (new Date(checkOut) - new Date(checkIn)) / (1000 * 60 * 60 * 24));
+            const total = (room.price_per_night * nights) + extra;
+            document.getElementById('b-total-input').value = total;
+        }
+    }
+}
+
 window.saveCloudSettings = async () => {
     const url = document.getElementById('gasUrlInput').value;
     if (!url.startsWith('https://script.google.com')) {
@@ -423,6 +441,55 @@ document.addEventListener('DOMContentLoaded', () => {
         UI.renderDashboard();
         initSidebar();
         UI.hideLoading();
+
+        // Evnet for Booking Calculation
+        ['b-in', 'b-out', 'b-room', 'b-extra'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('change', calculateTotal);
+        });
+
+        // Form Submit
+        const form = document.getElementById('formBooking');
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const booking = {
+                    booking_id: 'BK-' + Date.now().toString().slice(-6),
+                    guest_id: 'G-' + Date.now().toString().slice(-4),
+                    room_id: parseInt(document.getElementById('b-room').value),
+                    check_in_date: document.getElementById('b-in').value,
+                    nights: Math.max(1, (new Date(document.getElementById('b-out').value) - new Date(document.getElementById('b-in').value)) / (1000 * 60 * 60 * 24)),
+                    total_amount: parseFloat(document.getElementById('b-total-input').value),
+                    channel: document.getElementById('b-channel').value,
+                    payment_method: document.getElementById('b-payment').value
+                };
+
+                const guest = {
+                    guest_id: booking.guest_id,
+                    first_name: document.getElementById('searchName').value,
+                    phone_number: document.getElementById('custPhone').value,
+                    address: document.getElementById('custAddress').value,
+                    tax_id: document.getElementById('custAddress').value.match(/\d{13}/) ? document.getElementById('custAddress').value.match(/\d{13}/)[0] : ''
+                };
+
+                DB.state.bookings.push(booking);
+                DB.state.guests.push(guest);
+                DB.state.payments.push({
+                    payment_id: 'P-' + booking.booking_id,
+                    booking_id: booking.booking_id,
+                    amount: booking.total_amount,
+                    payment_date: booking.check_in_date,
+                    payment_method: booking.payment_method
+                });
+
+                DB.saveAll();
+                alert("บันทึกสำเร็จ! กำลังซิงค์ข้อมูลลง Cloud...");
+                await CloudEngine.sync();
+                form.reset();
+                UI.renderDashboard();
+            });
+        }
+
     } catch (e) {
         console.error("Critical Startup Error", e);
         UI.hideLoading();
