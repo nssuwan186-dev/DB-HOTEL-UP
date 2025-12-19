@@ -64,6 +64,14 @@ const DB = {
             this.state.bookings = loadOrImport(STORAGE_KEYS.BOOKINGS, window.IMPORTED_BOOKINGS, MASTER_BOOKINGS);
             this.state.payments = loadOrImport(STORAGE_KEYS.PAYMENTS, window.IMPORTED_PAYMENTS, MASTER_PAYMENTS);
 
+            // Force re-import if data looks suspicious (e.g. only 5-6 rooms but CSV has 50+)
+            if (this.state.rooms.length < 10 && window.IMPORTED_ROOMS && window.IMPORTED_ROOMS.length > 10) {
+                console.log("Detecting incomplete data. Syncing with CSV import...");
+                this.state.rooms = window.IMPORTED_ROOMS;
+                this.state.guests = window.IMPORTED_GUESTS;
+                this.state.bookings = window.IMPORTED_BOOKINGS;
+                this.state.payments = window.IMPORTED_PAYMENTS;
+            }
             this.state.expenses = this.load(STORAGE_KEYS.EXPENSES) || [];
             this.state.employees = this.load(STORAGE_KEYS.EMPLOYEES) || [{ salary: 15000 }];
             this.state.gas_url = localStorage.getItem(STORAGE_KEYS.GAS_URL) || "";
@@ -82,20 +90,22 @@ const DB = {
     saveAll() {
         try {
             Object.keys(STORAGE_KEYS).forEach(k => {
-                const key = STORAGE_KEYS[k];
-                const stateKey = k.toLowerCase();
-                if (this.state[stateKey] !== undefined) {
-                    if (stateKey === 'gas_url') {
-                        localStorage.setItem(key, this.state[stateKey]);
-                    } else {
-                        localStorage.setItem(key, JSON.stringify(this.state[stateKey]));
-                    }
+                if (k !== 'GAS_URL') {
+                    localStorage.setItem(STORAGE_KEYS[k], JSON.stringify(this.state[k.toLowerCase()]));
                 }
             });
-        } catch (e) { console.warn("Could not save to localStorage", e); }
+        } catch (e) {
+            console.error("Save failed", e);
+        }
+    },
+    resetData() {
+        if (confirm("⚠️ คุณต้องการล้างข้อมูลทั้งหมดในเครื่องและโหลดใหม่จากสเตทเริ่มต้น (CSV) ใช่หรือไม่?\n(ข้อมูลที่คุณบันทึกใหม่จะหายไป)")) {
+            localStorage.clear();
+            location.reload();
+        }
     },
     clearData() {
-        if (confirm("คำเตือน! ข้อมูลในเบราว์เซอร์ทั้งหมดจะถูกลบ?")) {
+        if (confirm("⚠️ ต้องการล้างข้อมูลทั้งหมดและเริ่มใหม่จากศูนย์?")) {
             localStorage.clear();
             location.reload();
         }

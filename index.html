@@ -333,10 +333,15 @@
                 </div>
 
                 <div class="border-top pt-4">
-                    <h6 class="text-danger fw-bold">พื้นที่อันตราย</h6>
-                    <button class="btn btn-outline-danger" onclick="DB.clearData()">
-                        <i class='bx bx-trash'></i> ล้างข้อมูลแคชและรีเซ็ตระบบ
-                    </button>
+                    <h6 class="text-danger fw-bold">จัดการข้อมูลพื้นฐาน</h6>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-warning fw-bold" onclick="DB.resetData()">
+                            <i class='bx bx-refresh'></i> โหลดข้อมูลใหม่จากไฟล์ (CSV Import)
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="DB.clearData()">
+                            <i class='bx bx-trash'></i> ล้างข้อมูลและเริ่มใหม่
+                        </button>
+                    </div>
                 </div>
             </div>
         </section>
