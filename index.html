@@ -157,41 +157,78 @@
                 <form id="formBooking">
                     <h5 class="section-title"><i class='bx bxs-user-detail'></i> ข้อมูลผู้เข้าพัก</h5>
                     <div class="row g-3 mb-4">
-                        <div class="col-md-6 position-relative">
-                            <label class="form-label fw-bold">ระบุชื่อลูกค้า (AI Lookup)</label>
-                            <input type="text" class="form-control" id="searchName" placeholder="พิมพ์ชื่อลูกค้า...">
+                        <div class="col-md-4 position-relative">
+                            <label class="form-label fw-bold">ชื่อ-นามสกุลลูกค้า (AI Lookup)</label>
+                            <input type="text" class="form-control" id="searchName" placeholder="พิมพ์ชื่อเพื่อค้นหา หรือกรอกใหม่..." required>
                             <div id="custList" class="suggestion-box"></div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">เบอร์โทรศัพท์</label>
+                            <input type="text" class="form-control" id="custPhone" placeholder="08x-xxxxxxx">
+                        </div>
+                        <div class="col-md-5">
                             <label class="form-label">ที่อยู่ / เลขประจำตัวผู้เสียภาษี</label>
-                            <input type="text" class="form-control" id="custAddress" placeholder="ถ้ามี">
+                            <input type="text" class="form-control" id="custAddress" placeholder="ระบุเลขผู้เสียภาษีเพื่อออกใบกำกับภาษี">
                         </div>
                     </div>
 
-                    <h5 class="section-title"><i class='bx bxs-hotel'></i> รายละเอียดการจอง</h5>
+                    <h5 class="section-title"><i class='bx bxs-hotel'></i> รายละเอียดการจองและชำระเงิน</h5>
                     <div class="row g-3 mb-4">
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label class="form-label">Check In</label>
-                            <input type="date" class="form-control" id="b-in">
+                            <input type="date" class="form-control" id="b-in" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Check Out</label>
+                            <input type="date" class="form-control" id="b-out" required>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Check Out</label>
-                            <input type="date" class="form-control" id="b-out">
-                        </div>
-                        <div class="col-md-4">
                             <label class="form-label">หมายเลขห้อง</label>
-                            <select class="form-select" id="b-room">
-                                <option value="">เลือกห้องพัก...</option>
+                            <select class="form-select" id="b-room" required>
+                                <option value="">เลือกห้องที่ว่าง...</option>
                             </select>
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">ยอดรวม</label>
-                            <input type="number" class="form-control" id="b-total-input">
+                            <label class="form-label">ช่องทางจอง</label>
+                            <select class="form-select" id="b-channel">
+                                <option value="Walk-in">Walk-in</option>
+                                <option value="Line">Line</option>
+                                <option value="Phone">โทรศัพท์</option>
+                                <option value="Booking.com">Booking.com</option>
+                                <option value="Agoda">Agoda</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">การชำระเงิน</label>
+                            <select class="form-select" id="b-payment">
+                                <option value="เงินโอน QR">เงินโอน QR (แนะนำ)</option>
+                                <option value="เงินสด">เงินสด</option>
+                                <option value="เงินโอน">เงินโอนธนาคาร</option>
+                                <option value="ค้างชำระ">ค้างชำระ</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3">
+                            <label class="form-label">ค่าบริการอื่นๆ (เช่น เตียงเสริม)</label>
+                            <input type="number" class="form-control" id="b-extra" value="0">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">ค่าห้องต่อคืน</label>
+                            <input type="number" class="form-control" id="b-price-night" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-primary">ยอดรวมสุทธิ (คำนวณอัตโนมัติ)</label>
+                            <input type="number" class="form-control border-primary bg-light" id="b-total-input" style="font-size: 1.25rem; font-weight: bold;">
                         </div>
                     </div>
 
                     <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary px-5 py-2 fw-bold">บันทึกรายการ</button>
+                        <button type="submit" class="btn btn-primary px-5 py-2 fw-bold">
+                            <i class='bx bxs-save'></i> บันทึกการจองและซิงค์ Cloud
+                        </button>
+                        <button type="reset" class="btn btn-outline-secondary px-4">ล้างข้อมูล</button>
                     </div>
                 </form>
             </div>
