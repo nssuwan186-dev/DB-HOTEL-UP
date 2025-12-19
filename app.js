@@ -104,12 +104,11 @@ const CloudEngine = {
         if (statusEl) statusEl.innerText = "สถานะ: กำลังซิงค์ข้อมูล...";
 
         try {
-            console.log("Attempting to sync with URL:", url);
+            console.log("Syncing to Cloud...");
             const response = await fetch(url, {
                 method: 'POST',
-                mode: 'no-cors', // Important for GAS debugging, but we prefer CORS if possible
                 headers: {
-                    'Content-Type': 'text/plain;charset=utf-8', // GAS handles this better than application/json in some cases
+                    'Content-Type': 'text/plain;charset=utf-8',
                 },
                 body: JSON.stringify({
                     action: 'sync',
@@ -117,15 +116,18 @@ const CloudEngine = {
                 })
             });
 
-            // Note: with 'no-cors', we cannot read the response body. 
-            // This is a temporary fix to at least "send" the data without 429/CORS errors popping up instantly.
-            // For a full solution, the GAS must be deployed as "Anyone" and use CORS.
+            const result = await response.json();
+            console.log("Cloud Response:", result);
 
-            if (statusEl) statusEl.innerText = "สถานะ: ส่งข้อมูลสำเร็จ " + new Date().toLocaleTimeString();
-            return { status: 'success' };
+            if (result.status === 'success') {
+                if (statusEl) statusEl.innerText = "สถานะ: เชื่อมต่อล่าสุด " + new Date().toLocaleTimeString();
+                return result;
+            } else {
+                throw new Error(result.message || "Cloud Error");
+            }
         } catch (e) {
-            console.error("Sync Error Details:", e);
-            if (statusEl) statusEl.innerText = "สถานะ: การเชื่อมต่อล้มเหลว (Check GAS URL / Deployment)";
+            console.error("Sync Error:", e);
+            if (statusEl) statusEl.innerText = "สถานะ: การเชื่อมต่อล้มเหลว (ตรวจสอบการตั้งค่า GAS)";
             return { status: 'error', error: e };
         }
     }
