@@ -51,11 +51,19 @@ const DB = {
     state: {},
     init() {
         try {
-            // Priority: LocalStorage > Imported CSV Data > Master Templates
-            this.state.guests = this.load(STORAGE_KEYS.GUESTS) || (window.IMPORTED_GUESTS) || MASTER_GUESTS;
-            this.state.rooms = this.load(STORAGE_KEYS.ROOMS) || (window.IMPORTED_ROOMS) || MASTER_ROOMS;
-            this.state.bookings = this.load(STORAGE_KEYS.BOOKINGS) || (window.IMPORTED_BOOKINGS) || MASTER_BOOKINGS;
-            this.state.payments = this.load(STORAGE_KEYS.PAYMENTS) || (window.IMPORTED_PAYMENTS) || MASTER_PAYMENTS;
+            // Helper to load or fallback if empty/null
+            const loadOrImport = (key, imported, master) => {
+                const stored = this.load(key);
+                // Use stored if it exists AND has items. Otherwise use imported, or master as last resort.
+                if (stored && stored.length > 0) return stored;
+                return (imported && imported.length > 0) ? imported : master;
+            };
+
+            this.state.guests = loadOrImport(STORAGE_KEYS.GUESTS, window.IMPORTED_GUESTS, MASTER_GUESTS);
+            this.state.rooms = loadOrImport(STORAGE_KEYS.ROOMS, window.IMPORTED_ROOMS, MASTER_ROOMS);
+            this.state.bookings = loadOrImport(STORAGE_KEYS.BOOKINGS, window.IMPORTED_BOOKINGS, MASTER_BOOKINGS);
+            this.state.payments = loadOrImport(STORAGE_KEYS.PAYMENTS, window.IMPORTED_PAYMENTS, MASTER_PAYMENTS);
+
             this.state.expenses = this.load(STORAGE_KEYS.EXPENSES) || [];
             this.state.employees = this.load(STORAGE_KEYS.EMPLOYEES) || [{ salary: 15000 }];
             this.state.gas_url = localStorage.getItem(STORAGE_KEYS.GAS_URL) || "";
