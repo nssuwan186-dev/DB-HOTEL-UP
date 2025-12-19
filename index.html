@@ -327,7 +327,12 @@
                     <label class="form-label fw-bold"><i class='bx bxl-google-cloud'></i> Google Sheets Sync (GAS URL)</label>
                     <div class="input-group">
                         <input type="password" id="gasUrlInput" class="form-control" placeholder="https://script.google.com/macros/s/xxxx/exec">
-                        <button class="btn btn-primary" onclick="window.saveCloudSettings()">เชื่อมต่อ</button>
+                        <button class="btn btn-primary" onclick="window.saveCloudSettings()">เชื่อมต่อ & ทดสอบ</button>
+                    </div>
+                    <div class="mt-3">
+                        <button class="btn btn-info text-white fw-bold" onclick="CloudEngine.pull()">
+                            <i class='bx bx-cloud-download'></i> ดึงข้อมูลล่าสุดจาก Sheets
+                        </button>
                     </div>
                     <div id="syncStatus" class="small mt-2 text-muted">สถานะ: ยังไม่ได้เชื่อมต่อกับระบบคลาวด์</div>
                 </div>
