@@ -379,18 +379,73 @@ const UI = {
     renderAccounting() {
         const list = document.getElementById('transactionsTableBody');
         if (!list) return;
-        list.innerHTML = DB.state.payments.map(p => `
-            <tr>
-                <td>${p.payment_date}</td>
-                <td><span class="text-primary fw-bold">ชำระค่าห้องพัก</span> (${p.booking_id})</td>
-                <td class="text-center">-</td>
-                <td class="text-center">-</td>
-                <td class="text-end text-success fw-bold">+฿${p.amount.toLocaleString()}</td>
-                <td class="text-end fw-bold">฿${p.amount.toLocaleString()}</td>
-                <td class="text-center">-</td>
-                <td><span class="badge bg-light text-dark border">โอนเงิน</span></td>
-            </tr>
-        `).join('');
+
+        // Combine and Sort Transactions
+        let allTx = [];
+
+        // Add Payments (Income)
+        DB.state.payments.forEach(p => {
+            const booking = DB.state.bookings.find(b => b.booking_id === p.booking_id) || {};
+            const guest = DB.state.guests.find(g => g.guest_id === booking.guest_id) || {};
+            const room = DB.state.rooms.find(r => r.room_id === booking.room_id) || {};
+
+            allTx.push({
+                date: p.payment_date,
+                title: guest.first_name || 'ชำระค่าห้องพัก',
+                phone: guest.phone_number || '-',
+                room: room.room_number || '-',
+                nights: booking.nights || 0,
+                expense: 0,
+                income: p.amount,
+                deposit: booking.deposit || '-',
+                note: booking.note || (booking.channel === 'Line' ? 'จองผ่านไลน์' : '-')
+            });
+        });
+
+        // Add Expenses
+        DB.state.expenses.forEach(e => {
+            allTx.push({
+                date: e.date,
+                title: e.title,
+                phone: '-',
+                room: '-',
+                nights: '-',
+                expense: e.amount,
+                income: 0,
+                deposit: '-',
+                note: e.note || '-'
+            });
+        });
+
+        // Sort by Date
+        allTx.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        // Calculate Running Balance
+        let balance = 0;
+        list.innerHTML = allTx.map(tx => {
+            balance += (tx.income - tx.expense);
+            const rowClass = tx.expense > 0 ? 'table-warning' : (tx.note.includes('มัดจำ') ? 'table-danger' : '');
+
+            return `
+                <tr class="${rowClass}">
+                    <td class="small">${tx.date}</td>
+                    <td><strong>${tx.title}</strong></td>
+                    <td class="text-muted small">${tx.phone}</td>
+                    <td class="text-center"><span class="badge bg-light text-dark">${tx.room}</span></td>
+                    <td class="text-center">${tx.nights}</td>
+                    <td class="text-end text-danger">${tx.expense > 0 ? tx.expense.toLocaleString() : '-'}</td>
+                    <td class="text-end text-success">${tx.income > 0 ? tx.income.toLocaleString() : '-'}</td>
+                    <td class="text-end fw-bold">฿${balance.toLocaleString()}</td>
+                    <td class="text-center font-monospace">${tx.deposit}</td>
+                    <td class="small text-muted">${tx.note}</td>
+                </tr>
+            `;
+        }).join('');
+
+        // Update Summaries
+        document.getElementById('totalIncome').innerText = "฿" + allTx.reduce((s, t) => s + t.income, 0).toLocaleString();
+        document.getElementById('totalExpense').innerText = "฿" + allTx.reduce((s, t) => s + t.expense, 0).toLocaleString();
+        document.getElementById('currentBalance').innerText = "฿" + balance.toLocaleString();
     }
 };
 
