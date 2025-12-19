@@ -463,6 +463,32 @@ const UI = {
         document.getElementById('totalIncome').innerText = "฿" + totalIncome.toLocaleString();
         document.getElementById('totalExpense').innerText = "฿" + totalExpense.toLocaleString();
         document.getElementById('currentBalance').innerText = "฿" + cashBalance.toLocaleString() + " (เงินสด)";
+        this.systemCash = cashBalance; // Store for difference check
+    },
+
+    checkDifference() {
+        const manual = parseFloat(document.getElementById('manualCashInput').value);
+        const diffEl = document.getElementById('diffResult');
+        if (isNaN(manual)) {
+            alert("กรุณาระบุจำนวนเงินสดทื่นับได้จริง");
+            return;
+        }
+        const diff = manual - this.systemCash;
+        if (diff === 0) {
+            diffEl.innerHTML = `<span class="text-success fw-bold"><i class='bx bx-check-circle'></i> ยอดตรงกัน (฿0)</span>`;
+        } else {
+            const color = diff > 0 ? 'text-info' : 'text-danger';
+            diffEl.innerHTML = `<span class="${color} fw-bold">ยอดต่าง: ฿${diff.toLocaleString()} (${diff > 0 ? 'เงินเกิน' : 'เงินขาด'})</span>`;
+        }
+    },
+
+    calculateSplit() {
+        const total = parseFloat(document.getElementById('b-total-input').value) || 0;
+        const count = parseInt(document.getElementById('splitCount').value) || 1;
+        const resultEl = document.getElementById('splitResult');
+        if (count > 0) {
+            resultEl.innerText = `คนละ ฿${(total / count).toLocaleString()}`;
+        }
     }
 };
 
@@ -474,15 +500,22 @@ function calculateTotal() {
     const checkOut = document.getElementById('b-out').value;
     const roomId = parseInt(document.getElementById('b-room').value);
     const extra = parseFloat(document.getElementById('b-extra').value) || 0;
+    const detailEl = document.getElementById('calcDetail');
 
     if (checkIn && checkOut && !isNaN(roomId)) {
         const room = DB.state.rooms.find(r => r.room_id === roomId);
         if (room) {
             document.getElementById('b-price-night').value = room.price_per_night;
-            const nights = Math.max(1, (new Date(checkOut) - new Date(checkIn)) / (1000 * 60 * 60 * 24));
-            const total = (room.price_per_night * nights) + extra;
+            const nights = Math.max(1, Math.ceil((new Date(checkOut) - new Date(checkIn)) / (1000 * 60 * 60 * 24)));
+            const roomTotal = room.price_per_night * nights;
+            const total = roomTotal + extra;
+
             document.getElementById('b-total-input').value = total;
+            detailEl.innerHTML = `<strong>รายละเอียด:</strong> ${room.price_per_night.toLocaleString()} x ${nights} คืน ${extra > 0 ? '+ ค่าเสริม ' + extra.toLocaleString() : ''} = ฿${total.toLocaleString()}`;
+            UI.calculateSplit();
         }
+    } else {
+        detailEl.innerText = "รายละเอียด: -";
     }
 }
 
@@ -544,6 +577,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     tax_id: document.getElementById('custAddress').value.match(/\d{13}/) ? document.getElementById('custAddress').value.match(/\d{13}/)[0] : ''
                 };
 
+                // Basic Validation
+                if (!booking.room_id || !booking.total_amount) {
+                    alert("กรุณาระบุข้อมูลห้องพักและราคาให้ครบถ้วน");
+                    return;
+                }
+                if (new Date(booking.check_in_date) > new Date()) {
+                    // console.warn("Check-in in the future is allowed for booking.");
+                }
+
                 DB.state.bookings.push(booking);
                 DB.state.guests.push(guest);
                 DB.state.payments.push({
@@ -555,9 +597,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 DB.saveAll();
-                alert("บันทึกสำเร็จ! กำลังซิงค์ข้อมูลลง Cloud...");
+                alert("บันทึกสำเร็จ! ข้อมูลถูกสำรองและกำลังซิงค์ Cloud...");
                 await CloudEngine.sync();
                 form.reset();
+                document.getElementById('calcDetail').innerText = "รายละเอียด: -";
                 UI.renderDashboard();
             });
         }

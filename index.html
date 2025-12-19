@@ -218,9 +218,15 @@
                             <label class="form-label">ค่าห้องต่อคืน</label>
                             <input type="number" class="form-control" id="b-price-night" readonly>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6 text-end">
                             <label class="form-label fw-bold text-primary">ยอดรวมสุทธิ (คำนวณอัตโนมัติ)</label>
-                            <input type="number" class="form-control border-primary bg-light" id="b-total-input" style="font-size: 1.25rem; font-weight: bold;">
+                            <div class="d-flex align-items-center justify-content-end gap-2 mb-1">
+                                <span class="small text-muted">หารกี่คน:</span>
+                                <input type="number" id="splitCount" class="form-control form-control-sm" style="width: 60px;" value="1" onchange="UI.calculateSplit()">
+                                <span id="splitResult" class="badge bg-light text-dark border">คนละ ฿-</span>
+                            </div>
+                            <input type="number" class="form-control border-primary bg-light text-end" id="b-total-input" style="font-size: 1.5rem; font-weight: bold; color: var(--primary-color);">
+                            <div id="calcDetail" class="small text-muted mt-2">รายละเอียด: -</div>
                         </div>
                     </div>
 
@@ -268,17 +274,23 @@
         <!-- Accounting Page -->
         <section id="accountingPage" class="page-content">
             <div class="row g-3 mb-4">
-                <div class="col-md-4">
-                    <div class="stat-card bg-success text-white">ยอดรายรับรวม <h4 id="totalIncome" class="m-0">0.00</h4>
-                    </div>
+                <div class="col-md-3">
+                    <div class="stat-card bg-success text-white">ยอดรายรับรวม <h4 id="totalIncome" class="m-0">0.00</h4></div>
                 </div>
-                <div class="col-md-4">
-                    <div class="stat-card bg-danger text-white">ยอดรายจ่ายรวม <h4 id="totalExpense" class="m-0">0.00
-                        </h4>
-                    </div>
+                <div class="col-md-3">
+                    <div class="stat-card bg-danger text-white">ยอดรายจ่ายรวม <h4 id="totalExpense" class="m-0">0.00</h4></div>
                 </div>
-                <div class="col-md-4">
-                    <div class="stat-card bg-primary text-white">กำไรสุทธิ <h4 id="currentBalance" class="m-0">0.00</h4>
+                <div class="col-md-3">
+                    <div class="stat-card bg-primary text-white">ยอดคงเหลือ (เงินสด) <h4 id="currentBalance" class="m-0">0.00</h4></div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card bg-dark text-warning border border-warning">
+                        ตรวจยอดต่าง (Balance Check)
+                        <div class="input-group input-group-sm mt-1">
+                            <input type="number" id="manualCashInput" class="form-control" placeholder="นับเงินสดจริง...">
+                            <button class="btn btn-warning fw-bold" onclick="UI.checkDifference()">ตรวจ</button>
+                        </div>
+                        <div id="diffResult" class="small mt-1 text-white">ยอดต่าง: -</div>
                     </div>
                 </div>
             </div>
