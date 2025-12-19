@@ -51,43 +51,19 @@ const DB = {
     state: {},
     init() {
         try {
-            this.state.guests = this.load(STORAGE_KEYS.GUESTS) || MASTER_GUESTS;
-            this.state.rooms = this.load(STORAGE_KEYS.ROOMS) || MASTER_ROOMS;
-            this.state.bookings = this.load(STORAGE_KEYS.BOOKINGS) || MASTER_BOOKINGS;
+            // Priority: LocalStorage > Imported CSV Data > Master Templates
+            this.state.guests = this.load(STORAGE_KEYS.GUESTS) || (window.IMPORTED_GUESTS) || MASTER_GUESTS;
+            this.state.rooms = this.load(STORAGE_KEYS.ROOMS) || (window.IMPORTED_ROOMS) || MASTER_ROOMS;
+            this.state.bookings = this.load(STORAGE_KEYS.BOOKINGS) || (window.IMPORTED_BOOKINGS) || MASTER_BOOKINGS;
             this.state.payments = this.load(STORAGE_KEYS.PAYMENTS) || MASTER_PAYMENTS;
             this.state.expenses = this.load(STORAGE_KEYS.EXPENSES) || [];
             this.state.employees = this.load(STORAGE_KEYS.EMPLOYEES) || [{ salary: 15000 }];
             this.state.gas_url = localStorage.getItem(STORAGE_KEYS.GAS_URL) || "";
 
-            this.seedManualLedger(); // เติมข้อมูลจากสมุดบัญชีจริง
             this.saveAll();
         } catch (e) {
             console.error("Database initialization failed", e);
         }
-    },
-    seedManualLedger() {
-        if (this.state.payments.some(p => p.payment_date === '1-12-68' || p.payment_date === '2025-12-01')) return;
-
-        // ข้อมูลตัวอย่างชุดจริงจากสมุดบัญชี
-        const realData = [
-            { date: '2025-12-01', title: 'เบิกจ่ายค่าจ้างพนักงาน', exp: 775, note: 'ยอดยกมา 4,037' },
-            { date: '2025-12-01', title: 'พรทิพย์', room: 'B106', nights: 1, inc: 400, note: 'พักต่อ' },
-            { date: '2025-12-01', title: 'ชัยศักดิ์', room: 'N2', nights: 1, inc: 500, deposit: '200', phone: '089-39229374' }
-        ];
-
-        realData.forEach(d => {
-            if (d.exp) {
-                this.state.expenses.push({ id: 'E-' + Date.now() + Math.random(), title: d.title, amount: d.exp, date: d.date, note: d.note });
-            } else {
-                const gid = 'G-LEDGER-' + d.title;
-                const bid = 'BK-LEDGER-' + d.date + '-' + d.room;
-                if (!this.state.guests.find(g => g.guest_id === gid)) {
-                    this.state.guests.push({ guest_id: gid, first_name: d.title, phone_number: d.phone || '-', address: '-', tax_id: '' });
-                }
-                this.state.bookings.push({ booking_id: bid, guest_id: gid, room_id: d.room, nights: d.nights, total_amount: d.inc, check_in_date: d.date, deposit: d.deposit || '-' });
-                this.state.payments.push({ payment_id: 'PAY-' + bid, booking_id: bid, amount: d.inc, payment_date: d.date, payment_method: 'เงินสด' });
-            }
-        });
     },
     load(key) {
         try {
