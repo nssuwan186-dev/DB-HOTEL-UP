@@ -397,6 +397,7 @@ const UI = {
                 nights: booking.nights || 0,
                 expense: 0,
                 income: p.amount,
+                balanceType: (p.payment_method && p.payment_method.includes('โอน')) ? 'โอนเข้าบัญชี' : 'cash',
                 deposit: booking.deposit || '-',
                 note: booking.note || (booking.channel === 'Line' ? 'จองผ่านไลน์' : '-')
             });
@@ -412,8 +413,9 @@ const UI = {
                 nights: '-',
                 expense: e.amount,
                 income: 0,
+                balanceType: 'cash',
                 deposit: '-',
-                note: e.note || '-'
+                note: e.note || (e.title.includes('มัดจำ') ? 'หักค่ามัดจำ' : '-')
             });
         });
 
@@ -421,31 +423,44 @@ const UI = {
         allTx.sort((a, b) => new Date(a.date) - new Date(b.date));
 
         // Calculate Running Balance
-        let balance = 0;
+        let cashBalance = 0;
         list.innerHTML = allTx.map(tx => {
-            balance += (tx.income - tx.expense);
-            const rowClass = tx.expense > 0 ? 'table-warning' : (tx.note.includes('มัดจำ') ? 'table-danger' : '');
+            let displayBalance = "";
+
+            if (tx.title.includes("ยกมา")) {
+                cashBalance = (tx.income || tx.expense); // เริ่มยอดยกมาใหม่
+                displayBalance = cashBalance.toLocaleString();
+            } else if (tx.balanceType === 'โอนเข้าบัญชี') {
+                displayBalance = '<span class="text-primary small">โอนเข้าบัญชี</span>';
+            } else {
+                cashBalance += (tx.income - tx.expense);
+                displayBalance = cashBalance.toLocaleString();
+            }
+
+            const rowClass = tx.expense > 0 ? (tx.title.includes('มัดจำ') ? 'table-danger' : 'table-warning') : '';
 
             return `
                 <tr class="${rowClass}">
                     <td class="small">${tx.date}</td>
                     <td><strong>${tx.title}</strong></td>
                     <td class="text-muted small">${tx.phone}</td>
-                    <td class="text-center"><span class="badge bg-light text-dark">${tx.room}</span></td>
+                    <td class="text-center">${tx.room}</td>
                     <td class="text-center">${tx.nights}</td>
                     <td class="text-end text-danger">${tx.expense > 0 ? tx.expense.toLocaleString() : '-'}</td>
                     <td class="text-end text-success">${tx.income > 0 ? tx.income.toLocaleString() : '-'}</td>
-                    <td class="text-end fw-bold">฿${balance.toLocaleString()}</td>
-                    <td class="text-center font-monospace">${tx.deposit}</td>
+                    <td class="text-end fw-bold">${displayBalance}</td>
+                    <td class="text-center text-info fw-bold">${tx.deposit}</td>
                     <td class="small text-muted">${tx.note}</td>
                 </tr>
             `;
         }).join('');
 
         // Update Summaries
-        document.getElementById('totalIncome').innerText = "฿" + allTx.reduce((s, t) => s + t.income, 0).toLocaleString();
-        document.getElementById('totalExpense').innerText = "฿" + allTx.reduce((s, t) => s + t.expense, 0).toLocaleString();
-        document.getElementById('currentBalance').innerText = "฿" + balance.toLocaleString();
+        const totalIncome = allTx.reduce((s, t) => s + t.income, 0);
+        const totalExpense = allTx.reduce((s, t) => s + t.expense, 0);
+        document.getElementById('totalIncome').innerText = "฿" + totalIncome.toLocaleString();
+        document.getElementById('totalExpense').innerText = "฿" + totalExpense.toLocaleString();
+        document.getElementById('currentBalance').innerText = "฿" + cashBalance.toLocaleString() + " (เงินสด)";
     }
 };
 
