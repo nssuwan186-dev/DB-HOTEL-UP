@@ -1,0 +1,36 @@
+[
+    {
+        "booking_id": "BK202512290001",
+        "room_id": "101",
+        "customer_id": "CM0001",
+        "customer_name": "สมชาย ใจดี",
+        "customer_phone": "0812345678",
+        "check_in_date": "2025-12-29",
+        "check_out_date": "2025-12-31",
+        "nights": 2,
+        "room_type": "Standard",
+        "room_price": 800,
+        "service_fee": 100,
+        "total_amount": 1700,
+        "status": "Confirmed",
+        "channel": "Walk-in",
+        "created_at": "2025-12-29T09:00:00+07:00"
+    },
+    {
+        "booking_id": "BK202512290002",
+        "room_id": "203",
+        "customer_id": "CM0002",
+        "customer_name": "สมหญิง รักสะอาด",
+        "customer_phone": "0823456789",
+        "check_in_date": "2025-12-30",
+        "check_out_date": "2026-01-02",
+        "nights": 3,
+        "room_type": "Deluxe",
+        "room_price": 1200,
+        "service_fee": 150,
+        "total_amount": 3750,
+        "status": "Confirmed",
+        "channel": "Online",
+        "created_at": "2025-12-28T14:30:00+07:00"
+    }
+]

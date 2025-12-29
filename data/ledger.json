@@ -1,0 +1,58 @@
+[
+    {
+        "id": "LED0001",
+        "date": "2025-12-29",
+        "item": "รายรับค่าห้อง - สมชาย ใจดี",
+        "room_id": "101",
+        "phone": "0812345678",
+        "nights": 2,
+        "income": 1700,
+        "expense": 0,
+        "balance": 1700,
+        "deposit": 500,
+        "note": "จ่ายเงินสด",
+        "booking_id": "BK202512290001"
+    },
+    {
+        "id": "LED0002",
+        "date": "2025-12-28",
+        "item": "รายรับค่าห้อง - สมหญิง รักสะอาด",
+        "room_id": "203",
+        "phone": "0823456789",
+        "nights": 3,
+        "income": 3750,
+        "expense": 0,
+        "balance": 5450,
+        "deposit": 1000,
+        "note": "โอนเงิน",
+        "booking_id": "BK202512290002"
+    },
+    {
+        "id": "LED0003",
+        "date": "2025-12-29",
+        "item": "ค่าไฟฟ้า",
+        "room_id": "",
+        "phone": "",
+        "nights": 0,
+        "income": 0,
+        "expense": 2500,
+        "balance": 2950,
+        "deposit": 0,
+        "note": "ค่าไฟประจำเดือน",
+        "booking_id": ""
+    },
+    {
+        "id": "LED0004",
+        "date": "2025-12-29",
+        "item": "ค่าน้ำประปา",
+        "room_id": "",
+        "phone": "",
+        "nights": 0,
+        "income": 0,
+        "expense": 800,
+        "balance": 2150,
+        "deposit": 0,
+        "note": "ค่าน้ำประจำเดือน",
+        "booking_id": ""
+    }
+]

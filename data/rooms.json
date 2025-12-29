@@ -1,0 +1,66 @@
+[
+    {
+        "room_id": "101",
+        "building": "A",
+        "floor": "1",
+        "room_type": "Standard",
+        "price": 800,
+        "status": "Available"
+    },
+    {
+        "room_id": "102",
+        "building": "A",
+        "floor": "1",
+        "room_type": "Standard",
+        "price": 800,
+        "status": "Available"
+    },
+    {
+        "room_id": "103",
+        "building": "A",
+        "floor": "1",
+        "room_type": "Deluxe",
+        "price": 1200,
+        "status": "Available"
+    },
+    {
+        "room_id": "201",
+        "building": "A",
+        "floor": "2",
+        "room_type": "Standard",
+        "price": 800,
+        "status": "Available"
+    },
+    {
+        "room_id": "202",
+        "building": "A",
+        "floor": "2",
+        "room_type": "Standard",
+        "price": 800,
+        "status": "Available"
+    },
+    {
+        "room_id": "203",
+        "building": "A",
+        "floor": "2",
+        "room_type": "Deluxe",
+        "price": 1200,
+        "status": "Available"
+    },
+    {
+        "room_id": "301",
+        "building": "A",
+        "floor": "3",
+        "room_type": "Suite",
+        "price": 2000,
+        "status": "Available"
+    },
+    {
+        "room_id": "302",
+        "building": "A",
+        "floor": "3",
+        "room_type": "Suite",
+        "price": 2000,
+        "status": "Available"
+    }
+]

@@ -1,0 +1,38 @@
+[
+    {
+        "customer_id": "CM0001",
+        "name": "สมชาย ใจดี",
+        "phone": "0812345678",
+        "address": "123 ถนนสุขุมวิท กรุงเทพฯ",
+        "country": "ไทย",
+        "id_card": "1234567890123",
+        "passport": "",
+        "email": "somchai@example.com",
+        "customer_type": "Regular",
+        "notes": ""
+    },
+    {
+        "customer_id": "CM0002",
+        "name": "สมหญิง รักสะอาด",
+        "phone": "0823456789",
+        "address": "456 ถนนพระราม 4 กรุงเทพฯ",
+        "country": "ไทย",
+        "id_card": "9876543210987",
+        "passport": "",
+        "email": "somying@example.com",
+        "customer_type": "VIP",
+        "notes": "ลูกค้าประจำ"
+    },
+    {
+        "customer_id": "CM0003",
+        "name": "John Smith",
+        "phone": "0834567890",
+        "address": "789 Main Street, New York, USA",
+        "country": "USA",
+        "id_card": "",
+        "passport": "US123456789",
+        "email": "john.smith@example.com",
+        "customer_type": "Regular",
+        "notes": ""
+    }
+]
