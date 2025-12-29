@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { LayoutDashboard, BedDouble, CalendarPlus, BookOpenCheck, Users, Wallet, Settings, Menu, User, DollarSign, Home } from 'lucide-react';
+import Rooms from './components/Rooms';
+import Customers from './components/Customers';
+import Bookings from './components/Bookings';
+import Accounting from './components/Accounting';
 
 // Simple currency formatter
 const formatCurrency = (amount) => {
@@ -10,12 +14,14 @@ function App() {
     const [activeTab, setActiveTab] = useState('dashboard');
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     useEffect(() => {
         fetchStats();
     }, []);
 
     const fetchStats = async () => {
+        // Only fetch stats if dashboard is active or initial load
         try {
             const res = await fetch('/api/stats');
             if (res.ok) {
@@ -33,6 +39,15 @@ function App() {
         switch (activeTab) {
             case 'dashboard':
                 return <Dashboard stats={stats} />;
+            case 'rooms':
+                return <Rooms />;
+            case 'customers':
+                return <Customers />;
+            case 'bookings':
+            case 'checkin': // Reuse booking component for now
+                return <Bookings />;
+            case 'accounting':
+                return <Accounting />;
             default:
                 return (
                     <div className="card-panel text-center py-5">
@@ -45,18 +60,18 @@ function App() {
 
     return (
         <>
-            <div className="sidebar">
+            <div className={`sidebar ${sidebarOpen ? 'show' : ''}`}>
                 <div className="logo">
                     <Home size={24} />
                     <span>VIPAT Hotel <span className="badge bg-primary" style={{ fontSize: '0.5rem', verticalAlign: 'middle' }}>PRO</span></span>
                 </div>
                 <nav>
-                    <MenuItem id="dashboard" icon={<LayoutDashboard size={20} />} label="แดชบอร์ด" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
-                    <MenuItem id="rooms" icon={<BedDouble size={20} />} label="จัดการห้องพัก" active={activeTab === 'rooms'} onClick={() => setActiveTab('rooms')} />
-                    <MenuItem id="checkin" icon={<CalendarPlus size={20} />} label="จองห้อง/เช็คอิน" active={activeTab === 'checkin'} onClick={() => setActiveTab('checkin')} />
-                    <MenuItem id="bookings" icon={<BookOpenCheck size={20} />} label="รายการจอง" active={activeTab === 'bookings'} onClick={() => setActiveTab('bookings')} />
-                    <MenuItem id="customers" icon={<Users size={20} />} label="ฐานข้อมูลลูกค้า" active={activeTab === 'customers'} onClick={() => setActiveTab('customers')} />
-                    <MenuItem id="accounting" icon={<Wallet size={20} />} label="บัญชี & รายจัดการ" active={activeTab === 'accounting'} onClick={() => setActiveTab('accounting')} />
+                    <MenuItem id="dashboard" icon={<LayoutDashboard size={20} />} label="แดชบอร์ด" active={activeTab === 'dashboard'} onClick={() => { setActiveTab('dashboard'); setSidebarOpen(false); fetchStats(); }} />
+                    <MenuItem id="rooms" icon={<BedDouble size={20} />} label="จัดการห้องพัก" active={activeTab === 'rooms'} onClick={() => { setActiveTab('rooms'); setSidebarOpen(false); }} />
+                    <MenuItem id="checkin" icon={<CalendarPlus size={20} />} label="จองห้อง/เช็คอิน" active={activeTab === 'checkin'} onClick={() => { setActiveTab('checkin'); setSidebarOpen(false); }} />
+                    <MenuItem id="bookings" icon={<BookOpenCheck size={20} />} label="รายการจอง" active={activeTab === 'bookings'} onClick={() => { setActiveTab('bookings'); setSidebarOpen(false); }} />
+                    <MenuItem id="customers" icon={<Users size={20} />} label="ฐานข้อมูลลูกค้า" active={activeTab === 'customers'} onClick={() => { setActiveTab('customers'); setSidebarOpen(false); }} />
+                    <MenuItem id="accounting" icon={<Wallet size={20} />} label="บัญชี & รายจัดการ" active={activeTab === 'accounting'} onClick={() => { setActiveTab('accounting'); setSidebarOpen(false); }} />
 
                     <div style={{ marginTop: 'auto' }}>
                         <MenuItem id="settings" icon={<Settings size={20} />} label="ตั้งค่าระบบ" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
@@ -67,7 +82,7 @@ function App() {
             <main className="content">
                 <header className="content-header">
                     <div className="d-flex align-items-center gap-3">
-                        <Menu className="d-md-none cursor-pointer" />
+                        <Menu className="d-md-none cursor-pointer" onClick={() => setSidebarOpen(!sidebarOpen)} />
                         <h4 className="fw-bold m-0" style={{ textTransform: 'capitalize' }}>{activeTab}</h4>
                     </div>
                     <div className="d-flex align-items-center gap-3">
@@ -80,7 +95,7 @@ function App() {
                 </header>
 
                 <div className="page-content active" style={{ display: 'block' }}>
-                    {loading ? (
+                    {loading && !stats ? (
                         <div className="d-flex justify-content-center mt-5">
                             <div className="spinner-border text-primary"></div>
                         </div>
@@ -89,6 +104,9 @@ function App() {
                     )}
                 </div>
             </main>
+
+            {/* Mobile overlay */}
+            {sidebarOpen && <div className="modal-backdrop fade show d-md-none" onClick={() => setSidebarOpen(false)}></div>}
         </>
     );
 }
@@ -100,13 +118,21 @@ const MenuItem = ({ icon, label, active, onClick }) => (
 );
 
 const Dashboard = ({ stats }) => {
-    if (!stats) return null;
+    if (!stats) return <div className="text-center p-5">Loading stats...</div>;
     return (
-        <div className="row g-3">
-            <StatCard title="รายรับรวม" value={formatCurrency(stats.total_revenue)} icon={<DollarSign size={24} className="text-success op-50" />} />
-            <StatCard title="รายจ่ายรวม" value={formatCurrency(stats.total_expenses)} icon={<DollarSign size={24} className="text-danger op-50" />} />
-            <StatCard title="ห้องว่าง" value={stats.available_rooms} icon={<BedDouble size={24} className="text-primary op-50" />} />
-            <StatCard title="เข้าพักแล้ว" value={stats.occupied_rooms} icon={<Home size={24} className="text-info op-50" />} />
+        <div className="animation-fade-in">
+            <div className="row g-3 mb-4">
+                <StatCard title="รายรับรวม" value={formatCurrency(stats.total_revenue)} icon={<DollarSign size={24} className="text-success op-50" />} />
+                <StatCard title="รายจ่ายรวม" value={formatCurrency(stats.total_expenses)} icon={<DollarSign size={24} className="text-danger op-50" />} />
+                <StatCard title="ห้องว่าง" value={stats.available_rooms} icon={<BedDouble size={24} className="text-primary op-50" />} />
+                <StatCard title="เข้าพักแล้ว" value={stats.occupied_rooms} icon={<Home size={24} className="text-info op-50" />} />
+            </div>
+
+            <div className="card-panel text-center py-5">
+                <h3 className="text-muted">ยินดีต้อนรับสู่ระบบจัดการโรงแรม v2.0</h3>
+                <p>ข้อมูลทั้งหมดถูกเชื่อมต่อกับ Cloud Database (Supabase) เรียบร้อยแล้ว</p>
+                <button className="btn btn-primary mt-3" onClick={() => window.location.reload()}>รีเฟรชข้อมูล</button>
+            </div>
         </div>
     );
 };
