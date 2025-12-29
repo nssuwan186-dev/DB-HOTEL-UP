@@ -200,6 +200,15 @@ app.post('/api/bookings', async (req, res) => {
             room_price, service_fee, total_amount, status, channel
         } = req.body;
 
+        // Check if customer exists, if not create one (to satisfy FK)
+        const custCheck = await client.query('SELECT customer_id FROM customers WHERE customer_id = $1', [customer_id]);
+        if (custCheck.rows.length === 0) {
+            await client.query(
+                `INSERT INTO customers (customer_id, name, phone, customer_type) VALUES ($1, $2, $3, 'Walk-in')`,
+                [customer_id, customer_name || 'Guest', customer_phone || '-']
+            );
+        }
+
         // Insert booking
         const bookingResult = await client.query(
             `INSERT INTO bookings (
